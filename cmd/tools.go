@@ -13,6 +13,11 @@ var listedTools = []string{
     "node",
     "go",
     "npm",
+    "curl",
+    "gh",
+    "git",
+    "ffmpeg",
+    "tree",
 }
 
 var installableTools = []string{
@@ -40,6 +45,11 @@ var toolVersionCommands = map[string][]string{
     "node":    {"--version"},
     "go":      {"version"},
     "npm":     {"--version"},
+    "curl":    {"--version"},
+    "gh":      {"--version"},
+    "git":     {"--version"},
+    "ffmpeg":  {"-version"},
+    "tree":    {"--version"},
 }
 
 var toolDisplayNames = map[string]string{
@@ -48,6 +58,11 @@ var toolDisplayNames = map[string]string{
     "node":    "node",
     "go":      "go",
     "npm":     "npm",
+    "curl":    "curl",
+    "gh":      "gh",
+    "git":     "git",
+    "ffmpeg":  "ffmpeg",
+    "tree":    "tree",
 }
 
 func IsCommandAvailable(name string) bool {

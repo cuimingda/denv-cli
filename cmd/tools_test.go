@@ -43,7 +43,7 @@ func TestNewListCmdDefaultShowsToolsOnly(t *testing.T) {
     }
 
     got := strings.TrimSpace(out.String())
-    want := "php\npython3\nnode\ngo\nnpm"
+    want := "php\npython3\nnode\ngo\nnpm\ncurl\ngh\ngit\nffmpeg\ntree"
     if got != want {
         t.Fatalf("unexpected list output:\nwant:\n%q\ngot:\n%q", want, got)
     }
@@ -86,7 +86,7 @@ func TestNewListCmdWithVersionAndPath(t *testing.T) {
     }
 
     got := strings.TrimSpace(out.String())
-    want := "php 8.3.4 (/usr/bin/php)\npython3 3.12.4 (/usr/bin/python3)\nnode not found\ngo 1.23.4 (/usr/bin/go)\nnpm not found"
+    want := "php 8.3.4 (/usr/bin/php)\npython3 3.12.4 (/usr/bin/python3)\nnode not found\ngo 1.23.4 (/usr/bin/go)\nnpm not found\ncurl not found\ngh not found\ngit not found\nffmpeg not found\ntree not found"
     if got != want {
         t.Fatalf("unexpected list output:\nwant:\n%q\ngot:\n%q", want, got)
     }
@@ -128,7 +128,7 @@ func TestNewListCmdWithVersionOnly(t *testing.T) {
     }
 
     got := strings.TrimSpace(out.String())
-    want := "php 8.3.4\npython3 3.12.4\nnode not found\ngo 1.23.4\nnpm not found"
+    want := "php 8.3.4\npython3 3.12.4\nnode not found\ngo 1.23.4\nnpm not found\ncurl not found\ngh not found\ngit not found\nffmpeg not found\ntree not found"
     if got != want {
         t.Fatalf("unexpected list output:\nwant:\n%q\ngot:\n%q", want, got)
     }
@@ -170,7 +170,7 @@ func TestNewListCmdWithPathOnly(t *testing.T) {
     }
 
     got := strings.TrimSpace(out.String())
-    want := "php /usr/bin/php\npython3 /usr/bin/python3\nnode not found\ngo /usr/bin/go\nnpm not found"
+    want := "php /usr/bin/php\npython3 /usr/bin/python3\nnode not found\ngo /usr/bin/go\nnpm not found\ncurl not found\ngh not found\ngit not found\nffmpeg not found\ntree not found"
     if got != want {
         t.Fatalf("unexpected list output:\nwant:\n%q\ngot:\n%q", want, got)
     }
