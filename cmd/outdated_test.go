@@ -11,18 +11,31 @@ func TestCmpVersions(t *testing.T) {
     cases := []struct {
         current string
         latest  string
-        want    int
-    }{
-        {"1.23.4", "1.23.5", -1},
-        {"1.23.4", "1.23.4", 0},
-        {"1.10.0", "1.2.4", 1},
-    }
+		want    int
+	}{
+		{"1.23.4", "1.23.5", -1},
+		{"1.23.4", "1.23.4", 0},
+		{"1.10.0", "1.2.4", 1},
+		{"8.0_1", "8.0.1_4", -1},
+	}
 
     for _, c := range cases {
         got := cmpVersions(c.current, c.latest)
         if got != c.want {
             t.Fatalf("cmpVersions(%q, %q)=%d, expected %d", c.current, c.latest, got, c.want)
         }
+    }
+}
+
+func TestParseBrewStableVersionUsesRevision(t *testing.T) {
+    payload := `{"formulae":[{"name":"ffmpeg","revision":4,"versions":{"stable":"8.0.1"}}]}`
+
+    got, err := parseBrewStableVersion([]byte(payload))
+    if err != nil {
+        t.Fatalf("parseBrewStableVersion failed: %v", err)
+    }
+    if got != "8.0.1_4" {
+        t.Fatalf("expected 8.0.1_4, got %q", got)
     }
 }
 
@@ -157,4 +170,3 @@ func TestOutdatedHandlesMissingTool(t *testing.T) {
     found:
     }
 }
-

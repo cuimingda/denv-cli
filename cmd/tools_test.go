@@ -187,6 +187,64 @@ func TestExtractVersion(t *testing.T) {
     }
 }
 
+func TestToolVersionUsesBrewForFfmpeg(t *testing.T) {
+    oldLookup := executableLookup
+    oldRunner := commandRunner
+    executableLookup = func(name string) (string, error) {
+        if name == "ffmpeg" {
+            return "/opt/homebrew/bin/ffmpeg", nil
+        }
+        return "", exec.ErrNotFound
+    }
+    commandCalled := []string{}
+    commandRunner = func(name string, args ...string) ([]byte, error) {
+        commandCalled = append(commandCalled, name+" "+strings.Join(args, " "))
+        if name == "brew" && len(args) >= 2 && args[0] == "info" && args[1] == "ffmpeg" {
+            return []byte(`ffmpeg ✔: stable 8.0.1 (bottled), HEAD
+https://ffmpeg.org/
+Installed
+/opt/homebrew/Cellar/ffmpeg/7.1.1_3 (287 files, 54.8MB)
+/opt/homebrew/Cellar/ffmpeg/8.0_1 (285 files, 55.3MB) *`), nil
+        }
+        if name == "brew" && len(args) >= 3 && args[0] == "info" && args[1] == "--json=v2" && args[2] == "ffmpeg" {
+            return []byte(`{"formulae":[{"name":"ffmpeg","versions":{"stable":"8.0.1"}}]}`), nil
+        }
+        return []byte(""), nil
+    }
+    defer func() {
+        executableLookup = oldLookup
+        commandRunner = oldRunner
+    }()
+
+    got, err := ToolVersion("ffmpeg")
+    if err != nil {
+        t.Fatalf("ToolVersion(ffmpeg) failed: %v", err)
+    }
+    if got != "8.0_1" {
+        t.Fatalf("expected version from brew, got %q", got)
+    }
+
+    calledBrewInfo := false
+    calledBrewInfoJSON := false
+    for _, call := range commandCalled {
+        if call == "brew info ffmpeg" {
+            calledBrewInfo = true
+        }
+        if call == "brew info --json=v2 ffmpeg" {
+            calledBrewInfoJSON = true
+        }
+        if strings.HasPrefix(call, "ffmpeg ") {
+            t.Fatalf("expected not to call ffmpeg binary directly for version, got %q", call)
+        }
+    }
+    if !calledBrewInfo {
+        t.Fatal("expected to call brew info ffmpeg")
+    }
+    if calledBrewInfoJSON {
+        t.Fatal("unexpected fallback to JSON parser while installed path exists")
+    }
+}
+
 func TestIsInstallableTool(t *testing.T) {
     if !IsInstallableTool("php") {
         t.Fatal("expected php to be installable")

@@ -57,7 +57,6 @@ var toolVersionCommands = map[string][]string{
     "curl":    {"--version"},
     "gh":      {"--version"},
     "git":     {"--version"},
-    "ffmpeg":  {"-version"},
     "tree":    {"--version"},
 }
 
@@ -112,6 +111,10 @@ func CommandPath(name string) (string, error) {
 }
 
 func ToolVersion(name string) (string, error) {
+    if name == "ffmpeg" {
+        return toolVersionFromBrewList("ffmpeg")
+    }
+
     cmdArgs, ok := toolVersionCommands[name]
     if !ok {
         return "", fmt.Errorf("unsupported tool: %s", name)
@@ -123,6 +126,58 @@ func ToolVersion(name string) (string, error) {
     }
 
     return extractVersion(string(output))
+}
+
+func toolVersionFromBrewList(formula string) (string, error) {
+    output, err := commandRunner("brew", "info", formula)
+    if err == nil {
+        outputText := strings.TrimSpace(string(output))
+        if outputText != "" {
+            var fallbackVersion string
+            for _, line := range strings.Split(outputText, "\n") {
+                trimmed := strings.TrimSpace(line)
+                if !strings.Contains(trimmed, "/opt/homebrew/Cellar/"+formula+"/") {
+                    continue
+                }
+
+                fields := strings.Fields(trimmed)
+                if len(fields) == 0 {
+                    continue
+                }
+                if !strings.Contains(fields[0], "/opt/homebrew/Cellar/"+formula+"/") {
+                    continue
+                }
+
+                path := fields[0]
+                pathParts := strings.Split(path, "/")
+                if len(pathParts) == 0 {
+                    continue
+                }
+                candidate := pathParts[len(pathParts)-1]
+                if candidate == "" {
+                    continue
+                }
+                fallbackVersion = candidate
+
+                if len(fields) >= 2 && fields[len(fields)-1] == "*" {
+                    return candidate, nil
+                }
+            }
+            if fallbackVersion != "" {
+                return fallbackVersion, nil
+            }
+        }
+    }
+
+    output, err = commandRunner("brew", "info", "--json=v2", formula)
+    if err != nil {
+        if formulaVersion, versionErr := extractVersion(string(output)); versionErr == nil {
+            return formulaVersion, nil
+        }
+        return "", fmt.Errorf("brew info failed: %w", err)
+    }
+
+    return parseBrewStableVersion(output)
 }
 
 func extractVersion(out string) (string, error) {

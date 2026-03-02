@@ -78,18 +78,30 @@ func toolLatestVersionByBrew(formula string) (string, error) {
     if err != nil {
         return "", fmt.Errorf("brew info failed: %w", err)
     }
+    return parseBrewStableVersion(output)
+}
+
+func parseBrewStableVersion(output []byte) (string, error) {
+    type formulaInfo struct {
+        Revision int `json:"revision"`
+        Versions struct {
+            Stable string `json:"stable"`
+        } `json:"versions"`
+    }
 
     var payload struct {
-        Formulae []struct {
-            Versions struct {
-                Stable string `json:"stable"`
-            } `json:"versions"`
-        } `json:"formulae"`
+        Formulae []formulaInfo `json:"formulae"`
     }
 
     if err := json.Unmarshal(output, &payload); err == nil {
-        if len(payload.Formulae) > 0 && payload.Formulae[0].Versions.Stable != "" {
-            return payload.Formulae[0].Versions.Stable, nil
+        if len(payload.Formulae) > 0 {
+            stable := payload.Formulae[0].Versions.Stable
+            if payload.Formulae[0].Revision > 0 && stable != "" {
+                return fmt.Sprintf("%s_%d", stable, payload.Formulae[0].Revision), nil
+            }
+            if stable != "" {
+                return stable, nil
+            }
         }
     }
 
@@ -105,7 +117,7 @@ func toolLatestVersionByBrew(formula string) (string, error) {
         }
     }
 
-    return "", fmt.Errorf("failed to parse latest version")
+    return "", fmt.Errorf("failed to parse brew version")
 }
 
 func toolLatestVersionByNpm() (string, error) {
@@ -165,7 +177,7 @@ func cmpVersions(current string, latest string) int {
 
 func splitVersionParts(version string) []int {
     fields := strings.FieldsFunc(version, func(r rune) bool {
-        return r == '.' || r == '-'
+        return r == '.' || r == '-' || r == '_'
     })
 
     parts := make([]int, 0, len(fields))
