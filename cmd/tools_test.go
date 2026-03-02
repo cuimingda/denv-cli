@@ -177,6 +177,44 @@ func TestNewListCmdWithPathOnly(t *testing.T) {
     }
 }
 
+func TestNewListCmdShowsBrewInstalledToolWithInferredPath(t *testing.T) {
+    oldLookup := executableLookup
+    oldRunner := commandRunner
+    executableLookup = func(string) (string, error) {
+        return "", exec.ErrNotFound
+    }
+    commandRunner = func(name string, args ...string) ([]byte, error) {
+        if name == "brew" {
+            if len(args) == 3 && args[0] == "list" && args[1] == "--formula" && args[2] == "ffmpeg" {
+                return []byte("ffmpeg\n"), nil
+            }
+        }
+        if name == "/opt/homebrew/bin/ffmpeg" && len(args) > 0 && args[0] == "--version" {
+            return []byte("ffmpeg version 8.0.1"), nil
+        }
+        return []byte(""), nil
+    }
+    defer func() {
+        executableLookup = oldLookup
+        commandRunner = oldRunner
+    }()
+
+    cmd := NewListCmd()
+    cmd.SetOut(&bytes.Buffer{})
+    cmd.SetArgs([]string{"--version", "--path"})
+    out := &bytes.Buffer{}
+    cmd.SetOut(out)
+
+    if err := cmd.Execute(); err != nil {
+        t.Fatalf("list command failed: %v", err)
+    }
+
+    got := strings.TrimSpace(out.String())
+    if !strings.Contains(got, "ffmpeg 8.0.1 (/opt/homebrew/bin/ffmpeg)") {
+        t.Fatalf("expected ffmpeg to be reported as installed via brew, got %q", got)
+    }
+}
+
 func TestExtractVersion(t *testing.T) {
     got, err := extractVersion("go version go1.23.4 darwin/arm64")
     if err != nil {
@@ -454,6 +492,67 @@ func TestUpdateCommandHasNoUpdates(t *testing.T) {
     if got := strings.TrimSpace(out.String()); got != "no updates available" {
         t.Fatalf("unexpected output, got %q", got)
     }
+}
+
+func TestUpdateCommandUpdatesBrewInstalledToolWithoutPath(t *testing.T) {
+	oldLookup := executableLookup
+	oldRunner := commandRunner
+	oldRunnerWithOutput := commandRunnerWithOutput
+	executableLookup = func(name string) (string, error) {
+		if name == "brew" {
+			return "/opt/homebrew/bin/brew", nil
+		}
+		return "", exec.ErrNotFound
+	}
+	upgradeCalled := false
+	commandRunner = func(name string, args ...string) ([]byte, error) {
+		if name == "brew" {
+			if len(args) == 3 && args[0] == "list" && args[1] == "--formula" {
+				if args[2] == "php" {
+					return []byte("php\n"), nil
+				}
+				return []byte(""), nil
+			}
+
+			if len(args) >= 3 && args[0] == "info" && args[1] != "--json=v2" && args[2] == "php" {
+				return []byte(`Installed
+/opt/homebrew/Cellar/php/8.0.0 (123 files)`), nil
+			}
+
+			if len(args) >= 3 && args[0] == "info" && args[1] == "--json=v2" && args[2] == "php" {
+				return []byte(`{"formulae":[{"name":"php","versions":{"stable":"8.1.0"},"installed":[{"version":"8.0.0"}]}]}`), nil
+			}
+		}
+		return []byte(""), nil
+	}
+	commandRunnerWithOutput = func(_ io.Writer, name string, args ...string) error {
+		if name == "brew" && len(args) == 2 && args[0] == "upgrade" && args[1] == "php" {
+			upgradeCalled = true
+			return nil
+		}
+		return nil
+	}
+	defer func() {
+		executableLookup = oldLookup
+		commandRunner = oldRunner
+		commandRunnerWithOutput = oldRunnerWithOutput
+	}()
+
+	cmd := NewUpdateCmd()
+	out := &bytes.Buffer{}
+	cmd.SetOut(out)
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("update command failed: %v", err)
+	}
+
+	if !upgradeCalled {
+		t.Fatal("expected brew upgrade php to be called")
+	}
+
+	if got := strings.TrimSpace(out.String()); got == "no updates available" {
+		t.Fatalf("unexpected no updates output, got: %q", got)
+	}
 }
 
 func TestInstallCommandRejectsArguments(t *testing.T) {

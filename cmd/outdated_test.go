@@ -234,3 +234,49 @@ func TestOutdatedUsesBrewCurrentVersionsWithRevisions(t *testing.T) {
         t.Fatalf("current versions should be brew cellar revisions, got: %q", got)
     }
 }
+
+func TestOutdatedRecognizesBrewInstalledToolWithoutPath(t *testing.T) {
+    oldLookup := executableLookup
+    oldRunner := commandRunner
+    executableLookup = func(string) (string, error) {
+        return "", exec.ErrNotFound
+    }
+    commandRunner = func(name string, args ...string) ([]byte, error) {
+        if name == "brew" {
+            if len(args) == 3 && args[0] == "list" && args[1] == "--formula" && args[2] == "ffmpeg" {
+                return []byte("ffmpeg\n"), nil
+            }
+            if len(args) >= 3 && args[0] == "info" && args[1] != "--json=v2" && args[2] == "ffmpeg" {
+                return []byte("ffmpeg ✔: stable 8.0.1 (bottled), HEAD\nInstalled\n/opt/homebrew/Cellar/ffmpeg/7.1.1_3 (287 files, 54.8MB)\n/opt/homebrew/Cellar/ffmpeg/8.0_1 (285 files, 55.3MB) *"), nil
+            }
+            if len(args) >= 3 && args[0] == "info" && args[1] == "--json=v2" {
+                formula := args[2]
+                return []byte(`{"formulae":[{"name":"` + formula + `","versions":{"stable":"8.1"},"installed":[{"version":"8.0.1"}]}]}`), nil
+            }
+        }
+        return []byte(""), nil
+    }
+    defer func() {
+        executableLookup = oldLookup
+        commandRunner = oldRunner
+    }()
+
+    cmd := NewOutdatedCmd()
+    out := &bytes.Buffer{}
+    cmd.SetOut(out)
+
+    if err := cmd.Execute(); err != nil {
+        t.Fatalf("outdated command failed: %v", err)
+    }
+
+    got := strings.TrimSpace(out.String())
+    if strings.Contains(got, "ffmpeg <not installed>") {
+        t.Fatalf("expected ffmpeg to be recognized as installed, got: %q", got)
+    }
+	if !strings.Contains(got, "ffmpeg 8.0") {
+		t.Fatalf("expected ffmpeg outdated output, got: %q", got)
+	}
+	if !strings.Contains(got, "< 8.1") {
+		t.Fatalf("expected ffmpeg current/latest comparison, got: %q", got)
+	}
+}

@@ -44,20 +44,25 @@ func NewListCmd() *cobra.Command {
             }
 
             for _, name := range SupportedTools() {
-                toolPath := ""
                 version := ""
                 missing := false
                 installedByHomebrew := false
+                var toolPath string
 
-                if path, err := CommandPath(name); err == nil {
+                installed, path, homebrewInstalled, stateErr := ToolInstallState(name)
+                if stateErr != nil {
+                    return stateErr
+                }
+
+                if installed {
                     toolPath = path
-                    installedByHomebrew = isHomebrewPath(path)
+                    installedByHomebrew = homebrewInstalled
                 } else {
                     missing = true
                 }
 
                 if showVersion && !missing {
-                    if toolVersion, err := ToolVersion(name); err == nil {
+                    if toolVersion, err := ToolVersionWithPath(name, toolPath); err == nil {
                         version = toolVersion
                     } else {
                         missing = true

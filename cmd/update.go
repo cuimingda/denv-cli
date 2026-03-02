@@ -13,7 +13,11 @@ func NewUpdateCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			updated := false
 			for _, name := range SupportedTools() {
-				if !IsCommandAvailable(name) {
+				installed, _, _, err := ToolInstallState(name)
+				if err != nil {
+					return err
+				}
+				if !installed {
 					continue
 				}
 

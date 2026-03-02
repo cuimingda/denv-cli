@@ -14,7 +14,12 @@ func NewOutdatedCmd() *cobra.Command {
         Short: "Show outdated status for supported developer tools",
         RunE: func(cmd *cobra.Command, _ []string) error {
             for _, name := range SupportedTools() {
-            if !IsCommandAvailable(name) {
+                installed, _, _, err := ToolInstallState(name)
+                if err != nil {
+                    return err
+                }
+
+                if !installed {
                     latest, err := ToolLatestVersion(name)
                     if err != nil {
                         if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s %s\n", ToolDisplayName(name), "invalid latest version"); err != nil {

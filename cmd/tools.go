@@ -83,6 +83,29 @@ func IsCommandAvailable(name string) bool {
     return err == nil
 }
 
+func ToolInstallState(name string) (installed bool, commandPath string, installedByHomebrew bool, err error) {
+    commandPath, err = CommandPath(name)
+    if err == nil {
+        return true, commandPath, isHomebrewPath(commandPath), nil
+    }
+
+    formula, ok := brewFormulaForTool(name)
+    if !ok {
+        return false, "", false, nil
+    }
+
+    installedByBrew, lookupErr := IsBrewFormulaInstalled(formula)
+    if lookupErr != nil {
+        return false, "", false, lookupErr
+    }
+
+    if !installedByBrew {
+        return false, "", false, nil
+    }
+
+    return true, fmt.Sprintf("/opt/homebrew/bin/%s", name), true, nil
+}
+
 func ToolDisplayName(name string) string {
     if display, ok := toolDisplayNames[name]; ok {
         return display
@@ -119,6 +142,19 @@ func ToolVersion(name string) (string, error) {
     return toolVersionFromCommand(name)
 }
 
+func ToolVersionWithPath(name, commandPath string) (string, error) {
+    version, err := toolVersionFromCommand(name)
+    if err == nil {
+        return version, nil
+    }
+
+    if commandPath == "" || commandPath == name {
+        return "", err
+    }
+
+    return toolVersionFromCommandPath(commandPath, name)
+}
+
 func ToolVersionForOutdated(name string) (string, error) {
     if name == "npm" {
         return toolVersionFromCommand("npm")
@@ -139,6 +175,20 @@ func toolVersionFromCommand(name string) (string, error) {
     }
 
     output, err := commandRunner(name, cmdArgs...)
+    if err != nil {
+        return "", fmt.Errorf("get version failed: %w", err)
+    }
+
+    return extractVersion(string(output))
+}
+
+func toolVersionFromCommandPath(commandPath, name string) (string, error) {
+    cmdArgs, ok := toolVersionCommands[name]
+    if !ok {
+        return "", fmt.Errorf("unsupported tool: %s", name)
+    }
+
+    output, err := commandRunner(commandPath, cmdArgs...)
     if err != nil {
         return "", fmt.Errorf("get version failed: %w", err)
     }
@@ -601,7 +651,11 @@ func InstallGHWithOutput(out io.Writer, force bool) error {
 }
 
 func UpdateToolWithOutput(out io.Writer, name string) error {
-    if !IsCommandAvailable(name) {
+    installed, _, _, err := ToolInstallState(name)
+    if err != nil {
+        return err
+    }
+    if !installed {
         return fmt.Errorf("tool %s is not installed", name)
     }
 
