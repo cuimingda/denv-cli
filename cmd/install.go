@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"strings"
 
+	"github.com/cuimingda/denv-cli/internal/denv"
 	"github.com/spf13/cobra"
 )
 
@@ -16,10 +16,10 @@ Supported tools:
 - node -> brew install node
 - go -> brew install go
 - curl -> brew install curl
+- gh -> brew install gh
 - git -> brew install git
 - ffmpeg -> brew install ffmpeg
-- tree -> brew install tree
-- gh -> brew install gh`
+- tree -> brew install tree`
 
 	cmd := &cobra.Command{
 		Use:     "install",
@@ -62,66 +62,49 @@ Supported tools:
 }
 
 func buildInstallOperations(force bool) ([]string, error) {
-	operations := make([]string, 0)
-	for _, toolName := range InstallableTools() {
-		toolOps, err := buildInstallOperationsForTool(toolName, force)
-		if err != nil {
-			return nil, err
-		}
-		operations = append(operations, toolOps...)
-	}
-	return operations, nil
+	return denv.BuildInstallOperations(toolRuntime(), force)
 }
 
 func buildInstallOperationsForTool(toolName string, force bool) ([]string, error) {
-	tool, ok := managedToolFor(toolName)
-	if !ok || !tool.installable {
-		return nil, fmt.Errorf("unsupported tool: %s", toolName)
-	}
-
-	return buildInstallPlan(toolName, force, tool.planCheckCommand, tool.planCheckFormula)
+	return denv.BuildInstallOperationsForTool(toolRuntime(), toolName, force)
 }
 
 func buildNodeInstallOperations(force bool) ([]string, error) {
-	return buildInstallPlan("node", force, true, false)
+	return denv.BuildNodeInstallOperations(toolRuntime(), force)
 }
 
 func buildPHPInstallOperations(force bool) ([]string, error) {
-	return buildInstallPlan("php", force, true, false)
+	return denv.BuildPHPInstallOperations(toolRuntime(), force)
 }
 
 func buildPython3InstallOperations(force bool) ([]string, error) {
-	return buildInstallPlan("python3", force, true, true)
+	return denv.BuildPython3InstallOperations(toolRuntime(), force)
 }
 
 func buildGoInstallOperations(force bool) ([]string, error) {
-	return buildInstallPlan("go", force, true, false)
+	return denv.BuildGoInstallOperations(toolRuntime(), force)
 }
 
 func buildCurlInstallOperations(force bool) ([]string, error) {
-	return buildInstallPlan("curl", force, true, false)
+	return denv.BuildCurlInstallOperations(toolRuntime(), force)
 }
 
 func buildGitInstallOperations(force bool) ([]string, error) {
-	return buildInstallPlan("git", force, true, false)
+	return denv.BuildGitInstallOperations(toolRuntime(), force)
 }
 
 func buildFFmpegInstallOperations(force bool) ([]string, error) {
-	return buildInstallPlan("ffmpeg", force, true, false)
+	return denv.BuildFFmpegInstallOperations(toolRuntime(), force)
 }
 
 func buildTreeInstallOperations(force bool) ([]string, error) {
-	return buildInstallPlan("tree", force, true, false)
+	return denv.BuildTreeInstallOperations(toolRuntime(), force)
 }
 
 func buildGHInstallOperations(force bool) ([]string, error) {
-	return buildInstallPlan("gh", force, true, false)
+	return denv.BuildGHInstallOperations(toolRuntime(), force)
 }
 
 func runInstallOperation(out io.Writer, op string) error {
-	args := strings.Fields(op)
-	if len(args) == 0 {
-		return nil
-	}
-	return commandRunnerWithOutput(out, args[0], args[1:]...)
+	return denv.RunInstallOperation(out, toolRuntime(), op)
 }
