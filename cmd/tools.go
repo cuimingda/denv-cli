@@ -28,111 +28,115 @@ func toolRuntime() denv.Runtime {
 	}
 }
 
+func denvService() *denv.Service {
+	return denv.NewService(toolRuntime())
+}
+
 func IsCommandAvailable(name string) bool {
-	return denv.IsCommandAvailable(toolRuntime(), name)
+	return denvService().IsCommandAvailable(name)
 }
 
 func ToolInstallState(name string) (installed bool, commandPath string, installedByHomebrew bool, err error) {
-	return denv.ToolInstallState(toolRuntime(), name)
+	return denvService().ToolInstallState(name)
 }
 
 func ResolvedBrewBinaryPath(name, formula string) (string, error) {
-	return denv.ResolvedBrewBinaryPath(toolRuntime(), name, formula)
+	return denvService().ResolvedBrewBinaryPath(name, formula)
 }
 
 func ToolDisplayName(name string) string {
-	return denv.ToolDisplayName(name)
+	return denvService().ToolDisplayName(name)
 }
 
 func IsInstallableTool(name string) bool {
-	return denv.IsInstallableTool(name)
+	return denvService().IsInstallableTool(name)
 }
 
 func SupportedTools() []string {
-	return denv.SupportedTools()
+	return denvService().SupportedTools()
 }
 
 func InstallableTools() []string {
-	return denv.InstallableTools()
+	return denvService().InstallableTools()
 }
 
 func CommandPath(name string) (string, error) {
-	return denv.CommandPath(toolRuntime(), name)
+	return denvService().CommandPath(name)
 }
 
 func ToolVersion(name string) (string, error) {
-	return denv.ToolVersion(toolRuntime(), name)
+	return denvService().ToolVersion(name)
 }
 
 func ToolVersionWithPath(name, commandPath string) (string, error) {
-	return denv.ToolVersionWithPath(toolRuntime(), name, commandPath)
+	return denvService().ToolVersionWithPath(name, commandPath)
 }
 
 func ToolVersionForOutdated(name string) (string, error) {
-	return denv.ToolVersionForOutdated(toolRuntime(), name)
+	return denvService().ToolVersionForOutdated(name)
 }
 
 func extractVersion(out string) (string, error) {
-	return denv.ExtractVersion(out)
+	return denvService().ExtractVersion(out)
 }
 
 func splitVersionParts(version string) []int {
-	return denv.SplitVersionParts(version)
+	return denvService().SplitVersionParts(version)
 }
 
 func IsBrewInstalled() bool {
-	return denv.IsBrewInstalled(toolRuntime())
+	return denvService().IsBrewInstalled()
 }
 
 func IsBrewFormulaInstalled(formula string) (bool, error) {
-	return denv.IsBrewFormulaInstalled(toolRuntime(), formula)
+	return denvService().IsBrewFormulaInstalled(formula)
 }
 
-func InstallNode() error { return denv.InstallNode(toolRuntime()) }
-func InstallNodeWithOutput(out io.Writer, force bool) error { return denv.InstallNodeWithOutput(toolRuntime(), out, force) }
+func InstallNode() error { return denvService().InstallNode() }
+func InstallNodeWithOutput(out io.Writer, force bool) error { return denvService().InstallNodeWithOutput(out, force) }
 
-func InstallPHP() error { return denv.InstallPHP(toolRuntime()) }
-func InstallPHPWithOutput(out io.Writer, force bool) error { return denv.InstallPHPWithOutput(toolRuntime(), out, force) }
+func InstallPHP() error { return denvService().InstallPHP() }
+func InstallPHPWithOutput(out io.Writer, force bool) error { return denvService().InstallPHPWithOutput(out, force) }
 
-func InstallPython3() error { return denv.InstallPython3(toolRuntime()) }
-func InstallPython3WithOutput(out io.Writer, force bool) error { return denv.InstallPython3WithOutput(toolRuntime(), out, force) }
+func InstallPython3() error { return denvService().InstallPython3() }
+func InstallPython3WithOutput(out io.Writer, force bool) error { return denvService().InstallPython3WithOutput(out, force) }
 
-func InstallGo() error { return denv.InstallGo(toolRuntime()) }
-func InstallGoWithOutput(out io.Writer, force bool) error { return denv.InstallGoWithOutput(toolRuntime(), out, force) }
+func InstallGo() error { return denvService().InstallGo() }
+func InstallGoWithOutput(out io.Writer, force bool) error { return denvService().InstallGoWithOutput(out, force) }
 
-func InstallCurl() error { return denv.InstallCurl(toolRuntime()) }
-func InstallCurlWithOutput(out io.Writer, force bool) error { return denv.InstallCurlWithOutput(toolRuntime(), out, force) }
+func InstallCurl() error { return denvService().InstallCurl() }
+func InstallCurlWithOutput(out io.Writer, force bool) error { return denvService().InstallCurlWithOutput(out, force) }
 
-func InstallGit() error { return denv.InstallGit(toolRuntime()) }
-func InstallGitWithOutput(out io.Writer, force bool) error { return denv.InstallGitWithOutput(toolRuntime(), out, force) }
+func InstallGit() error { return denvService().InstallGit() }
+func InstallGitWithOutput(out io.Writer, force bool) error { return denvService().InstallGitWithOutput(out, force) }
 
-func InstallFFmpeg() error { return denv.InstallFFmpeg(toolRuntime()) }
-func InstallFFmpegWithOutput(out io.Writer, force bool) error { return denv.InstallFFmpegWithOutput(toolRuntime(), out, force) }
+func InstallFFmpeg() error { return denvService().InstallFFmpeg() }
+func InstallFFmpegWithOutput(out io.Writer, force bool) error { return denvService().InstallFFmpegWithOutput(out, force) }
 
-func InstallTree() error { return denv.InstallTree(toolRuntime()) }
-func InstallTreeWithOutput(out io.Writer, force bool) error { return denv.InstallTreeWithOutput(toolRuntime(), out, force) }
+func InstallTree() error { return denvService().InstallTree() }
+func InstallTreeWithOutput(out io.Writer, force bool) error { return denvService().InstallTreeWithOutput(out, force) }
 
-func InstallGH() error { return denv.InstallGH(toolRuntime()) }
-func InstallGHWithOutput(out io.Writer, force bool) error { return denv.InstallGHWithOutput(toolRuntime(), out, force) }
+func InstallGH() error { return denvService().InstallGH() }
+func InstallGHWithOutput(out io.Writer, force bool) error { return denvService().InstallGHWithOutput(out, force) }
 
-func InstallTool(name string) error { return denv.InstallTool(toolRuntime(), name) }
+func InstallTool(name string) error { return denvService().InstallTool(name) }
 
 func UpdateToolWithOutput(out io.Writer, name string) error {
-	return denv.UpdateToolWithOutput(toolRuntime(), out, name)
+	return denvService().UpdateToolWithOutput(out, name)
 }
 
 func ToolLatestVersion(name string) (string, error) {
-	return denv.ToolLatestVersion(toolRuntime(), name)
+	return denvService().ToolLatestVersion(name)
 }
 
 func cmpVersions(current string, latest string) int {
-	return denv.CompareVersions(current, latest)
+	return denvService().CompareVersions(current, latest)
 }
 
 func parseBrewStableVersion(output []byte) (string, error) {
-	return denv.ParseBrewStableVersion(output)
+	return denvService().ParseBrewStableVersion(output)
 }
 
 func resolvedBrewBinaryPath(name, formula string) (string, error) {
-	return ResolvedBrewBinaryPath(name, formula)
+	return denvService().ResolvedBrewBinaryPath(name, formula)
 }

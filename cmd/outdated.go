@@ -11,14 +11,16 @@ func NewOutdatedCmd() *cobra.Command {
 		Use:   "outdated",
 		Short: "Show outdated status for supported developer tools",
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			svc := denvService()
+
 			for _, name := range SupportedTools() {
-				installed, _, _, err := ToolInstallState(name)
+				installed, _, _, err := svc.ToolInstallState(name)
 				if err != nil {
 					return err
 				}
 
 				if !installed {
-					latest, err := ToolLatestVersion(name)
+					latest, err := svc.ToolLatestVersion(name)
 					if err != nil {
 						if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s %s\n", ToolDisplayName(name), "invalid latest version"); err != nil {
 							return err
@@ -31,7 +33,7 @@ func NewOutdatedCmd() *cobra.Command {
 					continue
 				}
 
-				current, err := ToolVersionForOutdated(name)
+				current, err := svc.ToolVersionForOutdated(name)
 				if err != nil {
 					if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s %s\n", ToolDisplayName(name), "invalid current version"); err != nil {
 						return err
@@ -39,7 +41,7 @@ func NewOutdatedCmd() *cobra.Command {
 					continue
 				}
 
-				latest, err := ToolLatestVersion(name)
+				latest, err := svc.ToolLatestVersion(name)
 				if err != nil {
 					if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s %s\n", ToolDisplayName(name), "invalid latest version"); err != nil {
 						return err

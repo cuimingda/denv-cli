@@ -22,6 +22,7 @@ func NewListCmd() *cobra.Command {
         RunE: func(cmd *cobra.Command, _ []string) error {
             showVersion, _ := cmd.Flags().GetBool("version")
             showPath, _ := cmd.Flags().GetBool("path")
+            svc := denvService()
 
             format := func(name string, version string, toolPath string, missing bool) (string, string) {
                 if missing {
@@ -49,7 +50,7 @@ func NewListCmd() *cobra.Command {
                 installedByHomebrew := false
                 var toolPath string
 
-                installed, path, homebrewInstalled, stateErr := ToolInstallState(name)
+                installed, path, homebrewInstalled, stateErr := svc.ToolInstallState(name)
                 if stateErr != nil {
                     return stateErr
                 }
@@ -62,7 +63,7 @@ func NewListCmd() *cobra.Command {
                 }
 
                 if showVersion && !missing {
-                    if toolVersion, err := ToolVersionWithPath(name, toolPath); err == nil {
+                    if toolVersion, err := svc.ToolVersionWithPath(name, toolPath); err == nil {
                         version = toolVersion
                     } else {
                         missing = true
@@ -70,7 +71,7 @@ func NewListCmd() *cobra.Command {
                 }
 
                 if !showVersion && !showPath {
-                    displayName := ToolDisplayName(name)
+                    displayName := svc.ToolDisplayName(name)
                     if useColorOutput(cmd.OutOrStdout()) {
                         if missing {
                             displayName = colorize(colorRed, displayName)
@@ -84,7 +85,7 @@ func NewListCmd() *cobra.Command {
                     continue
                 }
 
-                toolName := ToolDisplayName(name)
+                toolName := svc.ToolDisplayName(name)
                 if useColorOutput(cmd.OutOrStdout()) {
                     if missing {
                         toolName = colorize(colorRed, toolName)

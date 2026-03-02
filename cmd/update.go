@@ -11,9 +11,11 @@ func NewUpdateCmd() *cobra.Command {
 		Use:   "update",
 		Short: "Update outdated supported developer tools to latest versions",
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			svc := denvService()
+
 			updated := false
 			for _, name := range SupportedTools() {
-				installed, _, _, err := ToolInstallState(name)
+				installed, _, _, err := svc.ToolInstallState(name)
 				if err != nil {
 					return err
 				}
@@ -21,12 +23,12 @@ func NewUpdateCmd() *cobra.Command {
 					continue
 				}
 
-			current, err := ToolVersionForOutdated(name)
+				current, err := svc.ToolVersionForOutdated(name)
 				if err != nil {
 					return err
 				}
 
-				latest, err := ToolLatestVersion(name)
+				latest, err := svc.ToolLatestVersion(name)
 				if err != nil {
 					return err
 				}

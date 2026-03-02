@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/cuimingda/denv-cli/internal/denv"
 	"github.com/spf13/cobra"
 )
 
@@ -62,49 +61,49 @@ Supported tools:
 }
 
 func buildInstallOperations(force bool) ([]string, error) {
-	return denv.BuildInstallOperations(toolRuntime(), force)
+	return denvService().BuildInstallOperations(force)
 }
 
 func buildInstallOperationsForTool(toolName string, force bool) ([]string, error) {
-	return denv.BuildInstallOperationsForTool(toolRuntime(), toolName, force)
+	return denvService().BuildInstallOperationsForTool(toolName, force)
 }
 
 func buildNodeInstallOperations(force bool) ([]string, error) {
-	return denv.BuildNodeInstallOperations(toolRuntime(), force)
+	return denvService().BuildNodeInstallOperations(force)
 }
 
 func buildPHPInstallOperations(force bool) ([]string, error) {
-	return denv.BuildPHPInstallOperations(toolRuntime(), force)
+	return denvService().BuildPHPInstallOperations(force)
 }
 
 func buildPython3InstallOperations(force bool) ([]string, error) {
-	return denv.BuildPython3InstallOperations(toolRuntime(), force)
+	return denvService().BuildPython3InstallOperations(force)
 }
 
 func buildGoInstallOperations(force bool) ([]string, error) {
-	return denv.BuildGoInstallOperations(toolRuntime(), force)
+	return denvService().BuildGoInstallOperations(force)
 }
 
 func buildCurlInstallOperations(force bool) ([]string, error) {
-	return denv.BuildCurlInstallOperations(toolRuntime(), force)
+	return denvService().BuildCurlInstallOperations(force)
 }
 
 func buildGitInstallOperations(force bool) ([]string, error) {
-	return denv.BuildGitInstallOperations(toolRuntime(), force)
+	return denvService().BuildGitInstallOperations(force)
 }
 
 func buildFFmpegInstallOperations(force bool) ([]string, error) {
-	return denv.BuildFFmpegInstallOperations(toolRuntime(), force)
+	return denvService().BuildFFmpegInstallOperations(force)
 }
 
 func buildTreeInstallOperations(force bool) ([]string, error) {
-	return denv.BuildTreeInstallOperations(toolRuntime(), force)
+	return denvService().BuildTreeInstallOperations(force)
 }
 
 func buildGHInstallOperations(force bool) ([]string, error) {
-	return denv.BuildGHInstallOperations(toolRuntime(), force)
+	return denvService().BuildGHInstallOperations(force)
 }
 
 func runInstallOperation(out io.Writer, op string) error {
-	return denv.RunInstallOperation(out, toolRuntime(), op)
+	return denvService().RunInstallOperation(out, op)
 }
