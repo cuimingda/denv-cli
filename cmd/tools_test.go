@@ -42,7 +42,7 @@ func TestNewListCmdShowsVersionsAndMissingTools(t *testing.T) {
     }
 
     got := strings.TrimSpace(out.String())
-    want := "php 8.3.4\npython3 3.12.4\nnode not found\nGo 1.23.4"
+    want := "php 8.3.4 (/usr/bin/php)\npython3 3.12.4 (/usr/bin/python3)\nnode not found\nGo 1.23.4 (/usr/bin/go)"
     if got != want {
         t.Fatalf("unexpected list output:\nwant:\n%q\ngot:\n%q", want, got)
     }

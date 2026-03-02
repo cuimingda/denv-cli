@@ -12,7 +12,8 @@ func NewListCmd() *cobra.Command {
         Short: "List supported developer tools",
         RunE: func(cmd *cobra.Command, _ []string) error {
             for _, name := range SupportedTools() {
-                if !IsCommandAvailable(name) {
+                toolPath, err := CommandPath(name)
+                if err != nil {
                     _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s not found\n", name)
                     if err != nil {
                         return err
@@ -29,7 +30,7 @@ func NewListCmd() *cobra.Command {
                     continue
                 }
 
-                _, err = fmt.Fprintf(cmd.OutOrStdout(), "%s %s\n", ToolDisplayName(name), version)
+                _, err = fmt.Fprintf(cmd.OutOrStdout(), "%s %s (%s)\n", ToolDisplayName(name), version, toolPath)
                 if err != nil {
                     return err
                 }

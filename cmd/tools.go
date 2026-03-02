@@ -41,7 +41,7 @@ var toolDisplayNames = map[string]string{
 }
 
 func IsCommandAvailable(name string) bool {
-    _, err := executableLookup(name)
+    _, err := CommandPath(name)
     return err == nil
 }
 
@@ -65,6 +65,10 @@ func SupportedTools() []string {
     out := make([]string, len(supportedTools))
     copy(out, supportedTools)
     return out
+}
+
+func CommandPath(name string) (string, error) {
+    return executableLookup(name)
 }
 
 func ToolVersion(name string) (string, error) {
