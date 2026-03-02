@@ -2,6 +2,7 @@ package cmd
 
 import (
     "fmt"
+    "io"
     "os/exec"
     "regexp"
     "strings"
@@ -31,6 +32,12 @@ var (
     executableLookup = exec.LookPath
     commandRunner   = func(name string, args ...string) ([]byte, error) {
         return exec.Command(name, args...).CombinedOutput()
+    }
+    commandRunnerWithOutput = func(out io.Writer, name string, args ...string) error {
+        cmd := exec.Command(name, args...)
+        cmd.Stdout = out
+        cmd.Stderr = out
+        return cmd.Run()
     }
 
     versionPatterns = []*regexp.Regexp{
@@ -169,6 +176,22 @@ func InstallNode() error {
     return nil
 }
 
+func InstallNodeWithOutput(out io.Writer) error {
+    if !IsBrewInstalled() {
+        return fmt.Errorf("homebrew is not installed")
+    }
+
+    if IsCommandAvailable("node") || IsCommandAvailable("npm") {
+        return fmt.Errorf("node is already installed")
+    }
+
+    if err := commandRunnerWithOutput(out, "brew", "install", "node@24"); err != nil {
+        return fmt.Errorf("brew install node failed: %w", err)
+    }
+
+    return nil
+}
+
 func InstallPHP() error {
     if !IsBrewInstalled() {
         return fmt.Errorf("homebrew is not installed")
@@ -179,6 +202,22 @@ func InstallPHP() error {
     }
 
     if _, err := commandRunner("brew", "install", "php@8.4"); err != nil {
+        return fmt.Errorf("brew install php failed: %w", err)
+    }
+
+    return nil
+}
+
+func InstallPHPWithOutput(out io.Writer) error {
+    if !IsBrewInstalled() {
+        return fmt.Errorf("homebrew is not installed")
+    }
+
+    if IsCommandAvailable("php") {
+        return fmt.Errorf("php is already installed")
+    }
+
+    if err := commandRunnerWithOutput(out, "brew", "install", "php@8.4"); err != nil {
         return fmt.Errorf("brew install php failed: %w", err)
     }
 
@@ -205,6 +244,26 @@ func InstallPython3() error {
     return nil
 }
 
+func InstallPython3WithOutput(out io.Writer) error {
+    if !IsBrewInstalled() {
+        return fmt.Errorf("homebrew is not installed")
+    }
+
+    installed, err := IsBrewFormulaInstalled("python3")
+    if err != nil {
+        return fmt.Errorf("check python3 install status failed: %w", err)
+    }
+    if installed {
+        return fmt.Errorf("python3 is already installed by homebrew")
+    }
+
+    if err := commandRunnerWithOutput(out, "brew", "install", "python3"); err != nil {
+        return fmt.Errorf("brew install python3 failed: %w", err)
+    }
+
+    return nil
+}
+
 func InstallGo() error {
     if !IsBrewInstalled() {
         return fmt.Errorf("homebrew is not installed")
@@ -215,6 +274,22 @@ func InstallGo() error {
     }
 
     if _, err := commandRunner("brew", "install", "go"); err != nil {
+        return fmt.Errorf("brew install go failed: %w", err)
+    }
+
+    return nil
+}
+
+func InstallGoWithOutput(out io.Writer) error {
+    if !IsBrewInstalled() {
+        return fmt.Errorf("homebrew is not installed")
+    }
+
+    if IsCommandAvailable("go") {
+        return fmt.Errorf("go is already installed")
+    }
+
+    if err := commandRunnerWithOutput(out, "brew", "install", "go"); err != nil {
         return fmt.Errorf("brew install go failed: %w", err)
     }
 

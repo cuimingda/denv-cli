@@ -3,6 +3,7 @@ package cmd
 import (
     "bytes"
     "fmt"
+    "io"
     "os/exec"
     "strings"
     "testing"
@@ -290,5 +291,55 @@ func TestInstallPython3OnlyHonorsHomebrewInstall(t *testing.T) {
     }
     if !invokedInstall {
         t.Fatal("expected brew install python3 command to be invoked")
+    }
+}
+
+func TestInstallCommandShowsHomebrewOutput(t *testing.T) {
+    oldLookup := executableLookup
+    oldRunner := commandRunner
+    oldRunnerWithOutput := commandRunnerWithOutput
+    executableLookup = func(name string) (string, error) {
+        if name == "brew" {
+            return "/opt/homebrew/bin/brew", nil
+        }
+        if name == "node" || name == "npm" {
+            return "", exec.ErrNotFound
+        }
+        return "", exec.ErrNotFound
+    }
+    commandRunner = func(name string, args ...string) ([]byte, error) {
+        if name == "brew" && len(args) > 0 && args[0] == "install" && len(args) == 2 && args[1] == "node@24" {
+            return []byte("Homebrew output: success\n"), nil
+        }
+        return nil, nil
+    }
+    commandRunnerWithOutput = func(out io.Writer, name string, args ...string) error {
+        if name == "brew" && len(args) > 0 && args[0] == "install" && len(args) == 2 && args[1] == "node@24" {
+            _, _ = out.Write([]byte("Homebrew output: success\n"))
+            return nil
+        }
+        return nil
+    }
+    defer func() {
+        executableLookup = oldLookup
+        commandRunner = oldRunner
+        commandRunnerWithOutput = oldRunnerWithOutput
+    }()
+
+    cmd := NewInstallCmd()
+    cmd.SetArgs([]string{"node"})
+    out := &bytes.Buffer{}
+    cmd.SetOut(out)
+
+    if err := cmd.Execute(); err != nil {
+        t.Fatalf("install command failed: %v", err)
+    }
+
+    got := out.String()
+    if got == "" {
+        t.Fatal("expected install command output to include brew output, got empty output")
+    }
+    if !strings.Contains(got, "Homebrew output: success") {
+        t.Fatalf("expected brew output to be shown, got: %q", got)
     }
 }

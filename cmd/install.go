@@ -19,12 +19,26 @@ func NewInstallCmd() *cobra.Command {
                 return fmt.Errorf("unsupported tool: %s", toolName)
             }
 
-            if err := InstallTool(toolName); err != nil {
+            var err error
+            switch toolName {
+            case "node":
+                err = InstallNodeWithOutput(cmd.OutOrStdout())
+            case "php":
+                err = InstallPHPWithOutput(cmd.OutOrStdout())
+            case "python3":
+                err = InstallPython3WithOutput(cmd.OutOrStdout())
+            case "go":
+                err = InstallGoWithOutput(cmd.OutOrStdout())
+            default:
+                return fmt.Errorf("unsupported tool: %s", toolName)
+            }
+
+            if err != nil {
                 return err
             }
 
-            _, err := fmt.Fprintln(cmd.OutOrStdout(), "done")
-            return err
+            _, outErr := fmt.Fprintln(cmd.OutOrStdout(), "done")
+            return outErr
         },
     }
 }
