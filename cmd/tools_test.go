@@ -494,28 +494,22 @@ func TestInstallNodeChecksExistingInstallations(t *testing.T) {
 func TestInstallCommandForceBypassesExistingInstallationCheck(t *testing.T) {
     oldLookup := executableLookup
     oldRunnerWithOutput := commandRunnerWithOutput
-    oldRunner := commandRunner
     executableLookup = func(name string) (string, error) {
         if name == "brew" || name == "node" || name == "npm" {
             return "/usr/local/bin/" + name, nil
         }
         return "", exec.ErrNotFound
     }
-    commandInstalled := false
+    operationCount := 0
     commandRunnerWithOutput = func(_ io.Writer, name string, args ...string) error {
-        if name == "brew" && len(args) > 0 && args[0] == "install" && len(args) == 2 && args[1] == "node" {
-            commandInstalled = true
-            return nil
+        if name == "brew" && len(args) > 0 && args[0] == "install" {
+            operationCount++
         }
         return nil
-    }
-    commandRunner = func(_ string, _ ...string) ([]byte, error) {
-        return nil, nil
     }
     defer func() {
         executableLookup = oldLookup
         commandRunnerWithOutput = oldRunnerWithOutput
-        commandRunner = oldRunner
     }()
 
     cmd := NewInstallCmd()
@@ -527,8 +521,8 @@ func TestInstallCommandForceBypassesExistingInstallationCheck(t *testing.T) {
         t.Fatalf("install command failed with --force: %v", err)
     }
 
-    if !commandInstalled {
-        t.Fatal("expected brew install node command to be executed")
+    if operationCount == 0 {
+        t.Fatal("expected install operations to be executed")
     }
 }
 
@@ -626,25 +620,18 @@ func TestInstallPython3OnlyHonorsHomebrewInstall(t *testing.T) {
 
 func TestInstallCommandShowsHomebrewOutput(t *testing.T) {
     oldLookup := executableLookup
-    oldRunner := commandRunner
     oldRunnerWithOutput := commandRunnerWithOutput
     executableLookup = func(name string) (string, error) {
         if name == "brew" {
             return "/opt/homebrew/bin/brew", nil
         }
-        if name == "node" || name == "npm" {
+        if name == "node" || name == "npm" || name == "php" || name == "go" || name == "curl" || name == "git" || name == "ffmpeg" || name == "tree" || name == "gh" || name == "python3" {
             return "", exec.ErrNotFound
         }
         return "", exec.ErrNotFound
     }
-    commandRunner = func(name string, args ...string) ([]byte, error) {
-        if name == "brew" && len(args) > 0 && args[0] == "install" && len(args) == 2 && args[1] == "node" {
-            return []byte("Homebrew output: success\n"), nil
-        }
-        return nil, nil
-    }
     commandRunnerWithOutput = func(out io.Writer, name string, args ...string) error {
-        if name == "brew" && len(args) > 0 && args[0] == "install" && len(args) == 2 && args[1] == "node" {
+        if name == "brew" && len(args) > 0 && args[0] == "install" {
             _, _ = out.Write([]byte("Homebrew output: success\n"))
             return nil
         }
@@ -652,7 +639,6 @@ func TestInstallCommandShowsHomebrewOutput(t *testing.T) {
     }
     defer func() {
         executableLookup = oldLookup
-        commandRunner = oldRunner
         commandRunnerWithOutput = oldRunnerWithOutput
     }()
 
@@ -669,15 +655,15 @@ func TestInstallCommandShowsHomebrewOutput(t *testing.T) {
     if got == "" {
         t.Fatal("expected install command output to include brew output, got empty output")
     }
-    if !strings.Contains(got, "Homebrew output: success") {
+	if !strings.Contains(got, "Homebrew output: success") {
         t.Fatalf("expected brew output to be shown, got: %q", got)
     }
 }
 
 func TestInstallCommandCurlLinksAfterInstall(t *testing.T) {
     oldLookup := executableLookup
-    oldRunnerWithOutput := commandRunnerWithOutput
     oldRunner := commandRunner
+    oldRunnerWithOutput := commandRunnerWithOutput
     executableLookup = func(name string) (string, error) {
         if name == "brew" {
             return "/opt/homebrew/bin/brew", nil
@@ -727,6 +713,64 @@ func TestInstallCommandCurlLinksAfterInstall(t *testing.T) {
     if !linkCalled {
         t.Fatal("expected brew link curl --force command to be invoked")
     }
+}
+
+func TestInstallCommandDryRunShowsOperationsOnly(t *testing.T) {
+    oldLookup := executableLookup
+    oldRunner := commandRunner
+    oldRunnerWithOutput := commandRunnerWithOutput
+    executableLookup = func(name string) (string, error) {
+        if name == "brew" {
+            return "/opt/homebrew/bin/brew", nil
+        }
+        if name == "node" || name == "npm" || name == "php" || name == "go" || name == "curl" || name == "git" || name == "ffmpeg" || name == "tree" || name == "gh" || name == "python3" {
+            return "", exec.ErrNotFound
+        }
+        return "", exec.ErrNotFound
+    }
+    commandRunner = func(_ string, _ ...string) ([]byte, error) {
+        return []byte(""), nil
+    }
+    commandRunnerWithOutputCalled := false
+    commandRunnerWithOutput = func(_ io.Writer, _ string, _ ...string) error {
+        commandRunnerWithOutputCalled = true
+        return nil
+    }
+    defer func() {
+        executableLookup = oldLookup
+        commandRunner = oldRunner
+        commandRunnerWithOutput = oldRunnerWithOutput
+    }()
+
+    cmd := NewInstallCmd()
+    cmd.SetArgs([]string{"--dry-run"})
+    out := &bytes.Buffer{}
+    cmd.SetOut(out)
+
+    if err := cmd.Execute(); err != nil {
+        t.Fatalf("install command failed: %v", err)
+    }
+
+    if commandRunnerWithOutputCalled {
+        t.Fatal("expected dry-run to not execute install operations")
+    }
+
+	got := strings.TrimSpace(out.String())
+	expected := strings.Join([]string{
+		"Would run: brew install php",
+		"Would run: brew install python3",
+		"Would run: brew install node",
+		"Would run: brew install go",
+		"Would run: brew install curl",
+		"Would run: brew link curl --force",
+		"Would run: brew install git",
+		"Would run: brew install ffmpeg",
+		"Would run: brew install tree",
+		"Would run: brew install gh",
+	}, "\n")
+	if got != expected {
+		t.Fatalf("unexpected dry-run output, expected %q got %q", expected, got)
+	}
 }
 
 func TestInstallCommandInstallsAllTools(t *testing.T) {
