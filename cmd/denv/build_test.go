@@ -60,6 +60,7 @@ func copyBuildFixture(srcRoot, dstRoot string) error {
         filepath.Join("cmd", "outdated.go"),
         filepath.Join("cmd", "tools.go"),
         filepath.Join("cmd", "install.go"),
+        filepath.Join("cmd", "update.go"),
     }
 
     for _, relPath := range fileList {

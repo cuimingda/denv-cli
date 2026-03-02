@@ -272,6 +272,7 @@ func TestRootHasListCommand(t *testing.T) {
     found := false
     installFound := false
     outdatedFound := false
+    updateFound := false
     for _, sub := range cmd.Commands() {
         if sub.Name() == "list" {
             found = true
@@ -282,6 +283,9 @@ func TestRootHasListCommand(t *testing.T) {
         if sub.Name() == "outdated" {
             outdatedFound = true
         }
+        if sub.Name() == "update" {
+            updateFound = true
+        }
     }
     if !found {
         t.Fatal("root command should include list subcommand")
@@ -291,6 +295,121 @@ func TestRootHasListCommand(t *testing.T) {
     }
     if !outdatedFound {
         t.Fatal("root command should include outdated subcommand")
+    }
+    if !updateFound {
+        t.Fatal("root command should include update subcommand")
+    }
+}
+
+func TestUpdateCommandUpdatesOnlyOutdatedTools(t *testing.T) {
+    oldLookup := executableLookup
+    oldRunner := commandRunner
+    oldRunnerWithOutput := commandRunnerWithOutput
+    executableLookup = func(name string) (string, error) {
+        if name == "brew" || name == "php" || name == "node" {
+            return "/usr/local/bin/" + name, nil
+        }
+        return "", exec.ErrNotFound
+    }
+    upgradeCalled := false
+    npmUpdateCalled := false
+    commandRunner = func(name string, args ...string) ([]byte, error) {
+        if name == "php" && len(args) == 1 && args[0] == "--version" {
+            return []byte("PHP 7.4.0"), nil
+        }
+        if name == "node" && len(args) == 1 && args[0] == "--version" {
+            return []byte("v20.0.0"), nil
+        }
+        if name == "npm" && len(args) == 1 && args[0] == "--version" {
+            return []byte("9.0.0"), nil
+        }
+        if name == "brew" && len(args) >= 3 && args[0] == "info" && args[1] == "--json=v2" && args[2] == "php" {
+            return []byte(`{"formulae":[{"versions":{"stable":"8.0.0"}}]}`), nil
+        }
+        if name == "brew" && len(args) >= 3 && args[0] == "info" && args[1] == "--json=v2" && args[2] == "node" {
+            return []byte(`{"formulae":[{"versions":{"stable":"20.0.0"}}]}`), nil
+        }
+        return []byte(""), nil
+    }
+    commandRunnerWithOutput = func(_ io.Writer, name string, args ...string) error {
+        if name == "brew" && len(args) == 2 && args[0] == "upgrade" && args[1] == "php" {
+            upgradeCalled = true
+            return nil
+        }
+        if name == "npm" && len(args) == 3 && args[0] == "install" && args[1] == "-g" && args[2] == "npm@latest" {
+            npmUpdateCalled = true
+            return nil
+        }
+        return nil
+    }
+    defer func() {
+        executableLookup = oldLookup
+        commandRunner = oldRunner
+        commandRunnerWithOutput = oldRunnerWithOutput
+    }()
+
+    cmd := NewUpdateCmd()
+    out := &bytes.Buffer{}
+    cmd.SetOut(out)
+
+    if err := cmd.Execute(); err != nil {
+        t.Fatalf("update command failed: %v", err)
+    }
+
+    if !upgradeCalled {
+        t.Fatal("expected php to be upgraded because outdated")
+    }
+    if npmUpdateCalled {
+        t.Fatal("expected npm to be skipped when not installed in this input")
+    }
+    if got := out.String(); strings.Contains(got, "no updates") {
+        t.Fatalf("unexpected no updates output when updates exist: %q", got)
+    }
+}
+
+func TestUpdateCommandHasNoUpdates(t *testing.T) {
+    oldLookup := executableLookup
+    oldRunner := commandRunner
+    oldRunnerWithOutput := commandRunnerWithOutput
+    executableLookup = func(name string) (string, error) {
+        if name == "brew" || name == "php" {
+            return "/usr/local/bin/" + name, nil
+        }
+        return "", exec.ErrNotFound
+    }
+    commandCalls := 0
+    commandRunner = func(name string, args ...string) ([]byte, error) {
+        if name == "php" && len(args) == 1 && args[0] == "--version" {
+            return []byte("7.4.0"), nil
+        }
+        if name == "brew" && len(args) >= 3 && args[0] == "info" && args[1] == "--json=v2" && args[2] == "php" {
+            return []byte(`{"formulae":[{"versions":{"stable":"7.4.0"}}]}`), nil
+        }
+        return []byte(""), nil
+    }
+    commandRunnerWithOutput = func(_ io.Writer, name string, args ...string) error {
+        commandCalls++
+        return nil
+    }
+    defer func() {
+        executableLookup = oldLookup
+        commandRunner = oldRunner
+        commandRunnerWithOutput = oldRunnerWithOutput
+    }()
+
+    cmd := NewUpdateCmd()
+    out := &bytes.Buffer{}
+    cmd.SetOut(out)
+
+    if err := cmd.Execute(); err != nil {
+        t.Fatalf("update command failed: %v", err)
+    }
+
+    if commandCalls != 0 {
+        t.Fatalf("expected no update actions, got %d", commandCalls)
+    }
+    if got := strings.TrimSpace(out.String()); got != "no updates available" {
+        t.Fatalf("unexpected output, got %q", got)
     }
 }
 

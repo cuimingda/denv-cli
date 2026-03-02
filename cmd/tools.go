@@ -445,3 +445,30 @@ func InstallGitWithOutput(out io.Writer, force bool) error {
 
     return nil
 }
+
+func UpdateToolWithOutput(out io.Writer, name string) error {
+    if !IsCommandAvailable(name) {
+        return fmt.Errorf("tool %s is not installed", name)
+    }
+
+    if name == "npm" {
+        if err := commandRunnerWithOutput(out, "npm", "install", "-g", "npm@latest"); err != nil {
+            return fmt.Errorf("npm update failed: %w", err)
+        }
+        return nil
+    }
+
+    if !IsBrewInstalled() {
+        return fmt.Errorf("homebrew is not installed")
+   }
+
+    formula, ok := brewFormulaForTool(name)
+    if !ok {
+        return fmt.Errorf("unsupported tool: %s", name)
+    }
+
+    if err := commandRunnerWithOutput(out, "brew", "upgrade", formula); err != nil {
+        return fmt.Errorf("brew upgrade %s failed: %w", formula, err)
+    }
+    return nil
+}
