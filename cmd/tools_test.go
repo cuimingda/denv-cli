@@ -213,6 +213,7 @@ func TestRootHasListCommand(t *testing.T) {
     cmd := NewRootCmd()
     found := false
     installFound := false
+    outdatedFound := false
     for _, sub := range cmd.Commands() {
         if sub.Name() == "list" {
             found = true
@@ -220,12 +221,18 @@ func TestRootHasListCommand(t *testing.T) {
         if sub.Name() == "install" {
             installFound = true
         }
+        if sub.Name() == "outdated" {
+            outdatedFound = true
+        }
     }
     if !found {
         t.Fatal("root command should include list subcommand")
     }
     if !installFound {
         t.Fatal("root command should include install subcommand")
+    }
+    if !outdatedFound {
+        t.Fatal("root command should include outdated subcommand")
     }
 }
 
