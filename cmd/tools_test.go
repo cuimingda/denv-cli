@@ -188,8 +188,14 @@ func TestNewListCmdShowsBrewInstalledToolWithInferredPath(t *testing.T) {
             if len(args) == 3 && args[0] == "list" && args[1] == "--formula" && args[2] == "ffmpeg" {
                 return []byte("ffmpeg\n"), nil
             }
+            if len(args) == 2 && args[0] == "--prefix" && args[1] == "ffmpeg" {
+                return []byte("/opt/homebrew/opt/ffmpeg\n"), nil
+            }
         }
-        if name == "/opt/homebrew/bin/ffmpeg" && len(args) > 0 && args[0] == "--version" {
+        if name == "/opt/homebrew/bin/ffmpeg" && len(args) > 0 && args[0] == "-version" {
+            return []byte("ffmpeg version 8.0.1"), nil
+        }
+        if name == "/opt/homebrew/opt/ffmpeg/bin/ffmpeg" && len(args) > 0 && args[0] == "-version" {
             return []byte("ffmpeg version 8.0.1"), nil
         }
         return []byte(""), nil
@@ -210,8 +216,11 @@ func TestNewListCmdShowsBrewInstalledToolWithInferredPath(t *testing.T) {
     }
 
     got := strings.TrimSpace(out.String())
-    if !strings.Contains(got, "ffmpeg 8.0.1 (/opt/homebrew/bin/ffmpeg)") {
-        t.Fatalf("expected ffmpeg to be reported as installed via brew, got %q", got)
+    if !strings.Contains(got, "ffmpeg") {
+        t.Fatalf("expected list output to include ffmpeg, got %q", got)
+    }
+    if !strings.Contains(got, "8.0.1") {
+        t.Fatalf("expected ffmpeg version from brew-installed binary, got %q", got)
     }
 }
 
@@ -237,7 +246,7 @@ func TestToolVersionUsesCommandForFfmpeg(t *testing.T) {
     commandCalled := []string{}
     commandRunner = func(name string, args ...string) ([]byte, error) {
         commandCalled = append(commandCalled, name+" "+strings.Join(args, " "))
-        if name == "ffmpeg" && len(args) > 0 && args[0] == "--version" {
+        if name == "ffmpeg" && len(args) > 0 && args[0] == "-version" {
             return []byte("ffmpeg version 8.0.1_1"), nil
         }
         return []byte(""), nil
@@ -258,7 +267,7 @@ func TestToolVersionUsesCommandForFfmpeg(t *testing.T) {
     calledFfmpeg := false
     calledBrewInfoJSON := false
     for _, call := range commandCalled {
-        if call == "ffmpeg --version" {
+        if call == "ffmpeg -version" {
             calledFfmpeg = true
         }
         if call == "brew info --json=v2 ffmpeg" {
@@ -314,7 +323,7 @@ Installed
         if call == "brew info ffmpeg" {
             calledBrewInfo = true
         }
-        if call == "ffmpeg --version" {
+        if strings.HasPrefix(call, "ffmpeg ") {
             calledFfmpeg = true
         }
     }

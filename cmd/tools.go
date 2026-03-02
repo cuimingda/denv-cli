@@ -62,7 +62,7 @@ var toolVersionCommands = map[string][]string{
     "gh":      {"--version"},
     "git":     {"--version"},
     "tree":    {"--version"},
-    "ffmpeg":  {"--version"},
+    "ffmpeg":  {"-version"},
 }
 
 var toolDisplayNames = map[string]string{
@@ -103,7 +103,30 @@ func ToolInstallState(name string) (installed bool, commandPath string, installe
         return false, "", false, nil
     }
 
+    brewPath, pathErr := resolvedBrewBinaryPath(name, formula)
+    if pathErr != nil {
+        return true, fmt.Sprintf("/opt/homebrew/bin/%s", name), true, nil
+    }
+
+    if brewPath != "" {
+        return true, brewPath, true, nil
+    }
+
     return true, fmt.Sprintf("/opt/homebrew/bin/%s", name), true, nil
+}
+
+func resolvedBrewBinaryPath(name, formula string) (string, error) {
+    output, err := commandRunner("brew", "--prefix", formula)
+    if err != nil {
+        return "", err
+    }
+
+    prefix := strings.TrimSpace(string(output))
+    if prefix == "" {
+        return "", nil
+    }
+
+    return fmt.Sprintf("%s/bin/%s", prefix, name), nil
 }
 
 func ToolDisplayName(name string) string {
