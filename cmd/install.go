@@ -10,7 +10,8 @@ func NewInstallCmd() *cobra.Command {
     return &cobra.Command{
         Use:   "install <tool_name>",
         Args:  cobra.ExactArgs(1),
-        Short: "Install a supported developer tool",
+        Short: "Install a supported developer tool (php, python3, node, go)",
+        Long:  "Install a supported developer tool.\nSupported tools: php, python3, node, go.",
         RunE: func(cmd *cobra.Command, args []string) error {
             toolName := args[0]
 
