@@ -47,9 +47,11 @@ func NewListCmd() *cobra.Command {
                 toolPath := ""
                 version := ""
                 missing := false
+                installedByHomebrew := false
 
                 if path, err := CommandPath(name); err == nil {
                     toolPath = path
+                    installedByHomebrew = isHomebrewPath(path)
                 } else {
                     missing = true
                 }
@@ -77,7 +79,7 @@ func NewListCmd() *cobra.Command {
                     continue
                 }
 
-                toolName, suffix := format(ToolDisplayName(name), version, toolPath, missing)
+                toolName := ToolDisplayName(name)
                 if useColorOutput(cmd.OutOrStdout()) {
                     if missing {
                         toolName = colorize(colorRed, toolName)
@@ -85,6 +87,31 @@ func NewListCmd() *cobra.Command {
                         toolName = colorize(colorGreen, toolName)
                     }
                 }
+
+                toolName, suffix := format(toolName, version, toolPath, missing)
+                if showPath && !missing && suffix != "" && useColorOutput(cmd.OutOrStdout()) {
+                    pathWithOptionalBraces := ""
+                    if showVersion {
+                        idx := strings.LastIndex(suffix, "(")
+                        if idx >= 0 && strings.HasSuffix(suffix, ")") {
+                            pathWithOptionalBraces = suffix[idx:]
+                            prefix := strings.TrimSpace(suffix[:idx])
+                            if installedByHomebrew {
+                                pathWithOptionalBraces = fmt.Sprintf("%s %s", prefix, colorize(colorGreen, pathWithOptionalBraces))
+                            } else {
+                                pathWithOptionalBraces = fmt.Sprintf("%s %s", prefix, colorize(colorRed, pathWithOptionalBraces))
+                            }
+                            suffix = pathWithOptionalBraces
+                        }
+                    } else {
+                        if installedByHomebrew {
+                            suffix = colorize(colorGreen, suffix)
+                        } else {
+                            suffix = colorize(colorRed, suffix)
+                        }
+                    }
+                }
+
                 line := toolName
                 if suffix != "" {
                     line = fmt.Sprintf("%s %s", toolName, suffix)
@@ -106,6 +133,10 @@ func NewListCmd() *cobra.Command {
 func useColorOutput(out io.Writer) bool {
     _, ok := out.(*os.File)
     return ok
+}
+
+func isHomebrewPath(path string) bool {
+    return strings.HasPrefix(path, "/opt/homebrew/")
 }
 
 func colorize(color string, text string) string {
