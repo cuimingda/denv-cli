@@ -740,7 +740,7 @@ func TestInstallCommandInstallsAllTools(t *testing.T) {
         return "", exec.ErrNotFound
     }
 
-    installed := map[string]bool{}
+    installed := map[string]int{}
     linked := false
     commandRunner = func(_ string, _ ...string) ([]byte, error) {
         return nil, nil
@@ -750,7 +750,7 @@ func TestInstallCommandInstallsAllTools(t *testing.T) {
             return nil
         }
         if len(args) == 2 && args[0] == "install" {
-            installed[args[1]] = true
+            installed[args[1]]++
             return nil
         }
         if len(args) == 3 && args[0] == "link" && args[1] == "curl" && args[2] == "--force" {
@@ -775,11 +775,88 @@ func TestInstallCommandInstallsAllTools(t *testing.T) {
     }
 
     for _, name := range InstallableTools() {
-        if !installed[name] {
-            t.Fatalf("expected install %q to be invoked, got: %v", name, installed)
+        if installed[name] != 1 {
+            t.Fatalf("expected install command for %q to run exactly once, got %d; all installs: %v", name, installed[name], installed)
         }
     }
+
+    for name, count := range installed {
+        if count != 1 {
+            t.Fatalf("unexpected install count %q: %d", name, count)
+        }
+    }
+
     if !linked {
         t.Fatal("expected brew link curl --force to be invoked")
+    }
+}
+
+func TestInstallCommandInstallTreeUsesBrewTreeFormula(t *testing.T) {
+    oldLookup := executableLookup
+    oldRunner := commandRunner
+    oldRunnerWithOutput := commandRunnerWithOutput
+    executableLookup = func(name string) (string, error) {
+        if name == "brew" {
+            return "/opt/homebrew/bin/brew", nil
+        }
+        return "", exec.ErrNotFound
+    }
+    commandRunner = func(_ string, _ ...string) ([]byte, error) {
+        return nil, nil
+    }
+    installs := []string{}
+    commandRunnerWithOutput = func(_ io.Writer, name string, args ...string) error {
+        if name == "brew" && len(args) == 2 && args[0] == "install" {
+            installs = append(installs, args[1])
+        }
+        if name == "brew" && len(args) == 3 && args[0] == "link" && args[1] == "curl" && args[2] == "--force" {
+            installs = append(installs, "curl-link-force")
+        }
+        return nil
+    }
+
+    defer func() {
+        executableLookup = oldLookup
+        commandRunner = oldRunner
+        commandRunnerWithOutput = oldRunnerWithOutput
+    }()
+
+    cmd := NewInstallCmd()
+    cmd.SetOut(&bytes.Buffer{})
+
+    if err := cmd.Execute(); err != nil {
+        t.Fatalf("install command failed: %v", err)
+    }
+
+    for _, name := range InstallableTools() {
+        if name == "curl" {
+            continue
+        }
+        expected := 0
+        for _, install := range installs {
+            if install == name {
+                expected++
+            }
+        }
+        if expected != 1 {
+            t.Fatalf("expected install %q once in install sequence, got %d, installs: %v", name, expected, installs)
+        }
+    }
+
+    treeCount := 0
+    pythonCount := 0
+    for _, install := range installs {
+        if install == "tree" {
+            treeCount++
+        }
+        if install == "python3" {
+            pythonCount++
+        }
+    }
+    if treeCount != 1 {
+        t.Fatalf("expected tree to be installed once, got %d, installs: %v", treeCount, installs)
+    }
+    if pythonCount != 1 {
+        t.Fatalf("expected python3 to be installed once, got %d, installs: %v", pythonCount, installs)
     }
 }
