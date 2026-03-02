@@ -8,7 +8,7 @@ import (
     "testing"
 )
 
-func TestNewListCmdShowsVersionsAndMissingTools(t *testing.T) {
+func TestNewListCmdDefaultShowsToolsOnly(t *testing.T) {
     oldLookup := executableLookup
     oldRunner := commandRunner
     executableLookup = func(name string) (string, error) {
@@ -43,7 +43,134 @@ func TestNewListCmdShowsVersionsAndMissingTools(t *testing.T) {
     }
 
     got := strings.TrimSpace(out.String())
+    want := "php\npython3\nnode\nGo\nnpm"
+    if got != want {
+        t.Fatalf("unexpected list output:\nwant:\n%q\ngot:\n%q", want, got)
+    }
+}
+
+func TestNewListCmdWithVersionAndPath(t *testing.T) {
+    oldLookup := executableLookup
+    oldRunner := commandRunner
+    executableLookup = func(name string) (string, error) {
+        if name == "php" || name == "go" || name == "python3" {
+            return "/usr/bin/" + name, nil
+        }
+        return "", exec.ErrNotFound
+    }
+    commandRunner = func(name string, args ...string) ([]byte, error) {
+        switch name {
+        case "php":
+            return []byte("PHP 8.3.4 (cli) (built: Jan  1 2025 00:00:00)"), nil
+        case "python3":
+            return []byte("Python 3.12.4"), nil
+        case "go":
+            return []byte("go version go1.23.4 darwin/arm64"), nil
+        default:
+            return nil, nil
+        }
+    }
+    defer func() {
+        executableLookup = oldLookup
+        commandRunner = oldRunner
+    }()
+
+    cmd := NewListCmd()
+    cmd.SetOut(&bytes.Buffer{})
+    cmd.SetArgs([]string{"--version", "--path"})
+    out := &bytes.Buffer{}
+    cmd.SetOut(out)
+
+    if err := cmd.Execute(); err != nil {
+        t.Fatalf("list command failed: %v", err)
+    }
+
+    got := strings.TrimSpace(out.String())
     want := "php 8.3.4 (/usr/bin/php)\npython3 3.12.4 (/usr/bin/python3)\nnode not found\nGo 1.23.4 (/usr/bin/go)\nnpm not found"
+    if got != want {
+        t.Fatalf("unexpected list output:\nwant:\n%q\ngot:\n%q", want, got)
+    }
+}
+
+func TestNewListCmdWithVersionOnly(t *testing.T) {
+    oldLookup := executableLookup
+    oldRunner := commandRunner
+    executableLookup = func(name string) (string, error) {
+        if name == "php" || name == "go" || name == "python3" {
+            return "/usr/bin/" + name, nil
+        }
+        return "", exec.ErrNotFound
+    }
+    commandRunner = func(name string, args ...string) ([]byte, error) {
+        switch name {
+        case "php":
+            return []byte("PHP 8.3.4 (cli) (built: Jan  1 2025 00:00:00)"), nil
+        case "python3":
+            return []byte("Python 3.12.4"), nil
+        case "go":
+            return []byte("go version go1.23.4 darwin/arm64"), nil
+        default:
+            return nil, nil
+        }
+    }
+    defer func() {
+        executableLookup = oldLookup
+        commandRunner = oldRunner
+    }()
+
+    cmd := NewListCmd()
+    out := &bytes.Buffer{}
+    cmd.SetOut(out)
+    cmd.SetArgs([]string{"--version"})
+
+    if err := cmd.Execute(); err != nil {
+        t.Fatalf("list command failed: %v", err)
+    }
+
+    got := strings.TrimSpace(out.String())
+    want := "php 8.3.4\npython3 3.12.4\nnode not found\nGo 1.23.4\nnpm not found"
+    if got != want {
+        t.Fatalf("unexpected list output:\nwant:\n%q\ngot:\n%q", want, got)
+    }
+}
+
+func TestNewListCmdWithPathOnly(t *testing.T) {
+    oldLookup := executableLookup
+    oldRunner := commandRunner
+    executableLookup = func(name string) (string, error) {
+        if name == "php" || name == "go" || name == "python3" {
+            return "/usr/bin/" + name, nil
+        }
+        return "", exec.ErrNotFound
+    }
+    commandRunner = func(name string, args ...string) ([]byte, error) {
+        switch name {
+        case "php":
+            return []byte("PHP 8.3.4 (cli) (built: Jan  1 2025 00:00:00)"), nil
+        case "python3":
+            return []byte("Python 3.12.4"), nil
+        case "go":
+            return []byte("go version go1.23.4 darwin/arm64"), nil
+        default:
+            return nil, nil
+        }
+    }
+    defer func() {
+        executableLookup = oldLookup
+        commandRunner = oldRunner
+    }()
+
+    cmd := NewListCmd()
+    out := &bytes.Buffer{}
+    cmd.SetOut(out)
+    cmd.SetArgs([]string{"--path"})
+
+    if err := cmd.Execute(); err != nil {
+        t.Fatalf("list command failed: %v", err)
+    }
+
+    got := strings.TrimSpace(out.String())
+    want := "php /usr/bin/php\npython3 /usr/bin/python3\nnode not found\nGo /usr/bin/go\nnpm not found"
     if got != want {
         t.Fatalf("unexpected list output:\nwant:\n%q\ngot:\n%q", want, got)
     }
