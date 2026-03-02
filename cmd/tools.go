@@ -10,7 +10,7 @@ import (
 var (
     supportedTools = []string{
         "php",
-        "python",
+        "python3",
         "node",
         "go",
     }
@@ -28,14 +28,14 @@ var (
 
 var toolVersionCommands = map[string][]string{
     "php":    {"--version"},
-    "python": {"--version"},
+    "python3": {"--version"},
     "node":   {"--version"},
     "go":     {"version"},
 }
 
 var toolDisplayNames = map[string]string{
-    "php":    "php",
-    "python": "python",
+    "php":     "php",
+    "python3": "python3",
     "node":   "node",
     "go":     "Go",
 }
