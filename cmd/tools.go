@@ -332,6 +332,10 @@ func InstallCurl() error {
         return fmt.Errorf("brew install curl failed: %w", err)
     }
 
+    if _, err := commandRunner("brew", "link", "curl", "--force"); err != nil {
+        return fmt.Errorf("brew link curl failed: %w", err)
+    }
+
     return nil
 }
 
@@ -346,6 +350,10 @@ func InstallCurlWithOutput(out io.Writer, force bool) error {
 
     if err := commandRunnerWithOutput(out, "brew", "install", "curl"); err != nil {
         return fmt.Errorf("brew install curl failed: %w", err)
+    }
+
+    if err := commandRunnerWithOutput(out, "brew", "link", "curl", "--force"); err != nil {
+        return fmt.Errorf("brew link curl failed: %w", err)
     }
 
     return nil

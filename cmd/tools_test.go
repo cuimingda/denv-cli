@@ -441,3 +441,53 @@ func TestInstallCommandShowsHomebrewOutput(t *testing.T) {
         t.Fatalf("expected brew output to be shown, got: %q", got)
     }
 }
+
+func TestInstallCommandCurlLinksAfterInstall(t *testing.T) {
+    oldLookup := executableLookup
+    oldRunnerWithOutput := commandRunnerWithOutput
+    executableLookup = func(name string) (string, error) {
+        if name == "brew" {
+            return "/opt/homebrew/bin/brew", nil
+        }
+        if name == "curl" {
+            return "", exec.ErrNotFound
+        }
+        return "", exec.ErrNotFound
+    }
+
+    installCalled := false
+    linkCalled := false
+    commandRunnerWithOutput = func(_ io.Writer, name string, args ...string) error {
+        if name != "brew" {
+            return nil
+        }
+        if len(args) == 2 && args[0] == "install" && args[1] == "curl" {
+            installCalled = true
+        }
+        if len(args) == 3 && args[0] == "link" && args[1] == "curl" && args[2] == "--force" {
+            linkCalled = true
+        }
+        return nil
+    }
+
+    defer func() {
+        executableLookup = oldLookup
+        commandRunnerWithOutput = oldRunnerWithOutput
+    }()
+
+    cmd := NewInstallCmd()
+    cmd.SetArgs([]string{"curl"})
+    out := &bytes.Buffer{}
+    cmd.SetOut(out)
+
+    if err := cmd.Execute(); err != nil {
+        t.Fatalf("install command failed: %v", err)
+    }
+
+    if !installCalled {
+        t.Fatal("expected brew install curl command to be invoked")
+    }
+    if !linkCalled {
+        t.Fatal("expected brew link curl --force command to be invoked")
+    }
+}
