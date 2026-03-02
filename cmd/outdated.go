@@ -34,12 +34,10 @@ func NewOutdatedCmdWithService(svc CommandService) *cobra.Command {
 			colorOutput := useColorOutput(out) && mode != listOutputNoColor
 			start := time.Now()
 			supported := svc.SupportedTools()
-			verbosef(cmd, "outdated check started for %d tools", len(supported))
 			doingf(cmd, "check outdated status for %d tools", len(supported))
 
 			rows := make([]outdatedItem, 0, len(supported))
 			for _, name := range supported {
-				verbosef(cmd, "checking tool: %s", name)
 				doingf(cmd, "checking %s", name)
 				row := outdatedItem{
 					Name:        name,
@@ -88,7 +86,7 @@ func NewOutdatedCmdWithService(svc CommandService) *cobra.Command {
 
 				rows = append(rows, row)
 			}
-			verbosef(cmd, "outdated check completed in %s", time.Since(start))
+			doingf(cmd, "outdated check completed in %s", time.Since(start))
 
 			switch mode {
 			case listOutputJSON:

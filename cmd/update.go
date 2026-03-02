@@ -23,11 +23,9 @@ func NewUpdateCmdWithService(svc CommandService) *cobra.Command {
 			start := time.Now()
 			supportedTools := svc.SupportedTools()
 			doingf(cmd, "scan %d tools for updates", len(supportedTools))
-			verbosef(cmd, "update started for %d supported tools", len(supportedTools))
 			updated := false
 			for idx, name := range supportedTools {
 				doingf(cmd, "check %d/%d: %s", idx+1, len(supportedTools), name)
-				verbosef(cmd, "checking %d/%d: %s", idx+1, len(supportedTools), name)
 				installed, _, _, err := svc.ToolInstallState(name)
 				if err != nil {
 					return err

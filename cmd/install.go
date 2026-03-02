@@ -44,25 +44,22 @@ Supported tools:
 			if err != nil {
 				return err
 			}
-			verbosef(cmd, "planned %d install operations (dry-run=%t)", len(operations), dryRun)
 			doingf(cmd, "prepared %d operations in %s", len(operations), time.Since(operationStart))
 
 			if dryRun {
 				doingf(cmd, "showing installation plan without execution")
 				for _, operation := range operations {
-					verbosef(cmd, "dry-run operation: %s", operation.String())
 					if _, err := fmt.Fprintf(cmd.OutOrStdout(), "Would run: %s\n", operation.String()); err != nil {
 						return err
 					}
 				}
-				verbosef(cmd, "dry-run plan generation completed in %s", time.Since(operationStart))
+				doingf(cmd, "dry-run plan generation completed in %s", time.Since(operationStart))
 				return nil
 			}
 
 			doingf(cmd, "start executing %d install operations", len(operations))
 			for idx, operation := range operations {
 				doingf(cmd, "start: %s", operation.String())
-				verbosef(cmd, "executing operation %d/%d: %s", idx+1, len(operations), operation.String())
 				start := time.Now()
 				if err := svc.RunInstallOperation(cmd.OutOrStdout(), operation); err != nil {
 					return err

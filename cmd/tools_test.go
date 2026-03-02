@@ -426,11 +426,11 @@ func TestRootVerboseRunsAndLogsInstallDryRun(t *testing.T) {
 	}
 
 	got := out.String()
-	if !strings.Contains(got, "[verbose] planned") {
+	if !strings.Contains(got, "[INFO]") {
 		t.Fatalf("expected verbose logs, got: %q", got)
 	}
-	if !strings.Contains(got, "[verbose] dry-run operation") {
-		t.Fatalf("expected dry-run verbose logs, got: %q", got)
+	if strings.Contains(got, "[verbose]") {
+		t.Fatalf("expected no overlapping verbose info in dry-run [INFO] flow, got: %q", got)
 	}
 	if !strings.Contains(got, "Would run: brew install php") {
 		t.Fatalf("expected dry-run operations output, got: %q", got)
@@ -470,8 +470,8 @@ func TestInstallCommandOutputsDoingProgress(t *testing.T) {
 	if got := strings.TrimSpace(out.String()); got == "" {
 		t.Fatal("expected install output")
 	}
-	if !strings.Contains(errOut.String(), "[doing]") {
-		t.Fatalf("expected doing logs on stderr, got: %q", errOut.String())
+	if !strings.Contains(errOut.String(), "[INFO]") {
+		t.Fatalf("expected info logs on stderr, got: %q", errOut.String())
 	}
 }
 
@@ -522,8 +522,8 @@ func TestUpdateCommandOutputsDoingProgress(t *testing.T) {
 		t.Fatalf("update command failed: %v", err)
 	}
 
-	if !strings.Contains(errOut.String(), "[doing]") {
-		t.Fatalf("expected doing logs on stderr, got: %q", errOut.String())
+	if !strings.Contains(errOut.String(), "[INFO]") {
+		t.Fatalf("expected info logs on stderr, got: %q", errOut.String())
 	}
 }
 

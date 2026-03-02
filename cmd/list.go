@@ -52,12 +52,10 @@ func NewListCmdWithService(svc ToolService) *cobra.Command {
 			out := cmd.OutOrStdout()
 			colorOutput := useColorOutput(out) && mode != listOutputNoColor
 
-			verbosef(cmd, "list started with version=%t path=%t output=%s", showVersion, showPath, mode)
 			start := time.Now()
 			doingf(cmd, "scan supported tools...")
 			items := make([]listItem, 0, len(svc.SupportedTools()))
 			for _, name := range svc.SupportedTools() {
-				verbosef(cmd, "resolving tool: %s", name)
 				doingf(cmd, "checking %s", name)
 				item := listItem{
 					Name:          name,
@@ -90,7 +88,7 @@ func NewListCmdWithService(svc ToolService) *cobra.Command {
 
 				items = append(items, item)
 			}
-			verbosef(cmd, "list scan completed in %s", time.Since(start))
+			doingf(cmd, "list scan completed in %s", time.Since(start))
 
 			return renderList(cmd.OutOrStdout(), mode, listRenderOptions{
 				colorOutput: colorOutput,
