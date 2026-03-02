@@ -2,6 +2,7 @@ package cmd
 
 import (
     "bytes"
+    "fmt"
     "os/exec"
     "strings"
     "testing"
@@ -71,13 +72,92 @@ func TestIsSupportedTool(t *testing.T) {
 func TestRootHasListCommand(t *testing.T) {
     cmd := NewRootCmd()
     found := false
+    installFound := false
     for _, sub := range cmd.Commands() {
         if sub.Name() == "list" {
             found = true
-            break
+        }
+        if sub.Name() == "install" {
+            installFound = true
         }
     }
     if !found {
         t.Fatal("root command should include list subcommand")
+    }
+    if !installFound {
+        t.Fatal("root command should include install subcommand")
+    }
+}
+
+func TestInstallCommandRejectsUnsupportedTool(t *testing.T) {
+    cmd := NewInstallCmd()
+    cmd.SetArgs([]string{"rust"})
+    if err := cmd.Execute(); err == nil {
+        t.Fatal("expected unsupported tool to fail")
+    }
+}
+
+func TestInstallNodeChecksExistingInstallations(t *testing.T) {
+    oldLookup := executableLookup
+    oldRunner := commandRunner
+    executableLookup = func(name string) (string, error) {
+        if name == "brew" || name == "node" {
+            return "/usr/local/bin/" + name, nil
+        }
+        return "", exec.ErrNotFound
+    }
+    commandCalls := 0
+    commandRunner = func(_ string, _ ...string) ([]byte, error) {
+        commandCalls++
+        return nil, nil
+    }
+    defer func() {
+        executableLookup = oldLookup
+        commandRunner = oldRunner
+    }()
+
+    if err := InstallNode(); err == nil {
+        t.Fatal("expected node install to fail when node is already installed")
+    }
+    if commandCalls != 0 {
+        t.Fatalf("unexpected command invocations, got %d", commandCalls)
+    }
+}
+
+func TestInstallPython3OnlyHonorsHomebrewInstall(t *testing.T) {
+    oldLookup := executableLookup
+    oldRunner := commandRunner
+    executableLookup = func(name string) (string, error) {
+        if name == "brew" {
+            return "/opt/homebrew/bin/brew", nil
+        }
+        if name == "python3" {
+            return "/usr/bin/python3", nil
+        }
+        return "", exec.ErrNotFound
+    }
+
+    invokedInstall := false
+    commandRunner = func(name string, args ...string) ([]byte, error) {
+        if name == "brew" && len(args) > 0 && args[0] == "list" {
+            return []byte(""), fmt.Errorf("exit status 1")
+        }
+        if name == "brew" && len(args) > 0 && args[0] == "install" && len(args) == 2 && args[1] == "python3" {
+            invokedInstall = true
+            return []byte(""), nil
+        }
+        return nil, nil
+    }
+
+    defer func() {
+        executableLookup = oldLookup
+        commandRunner = oldRunner
+    }()
+
+    if err := InstallPython3(); err != nil {
+        t.Fatalf("expected python3 install to run with brew formula missing, got: %v", err)
+    }
+    if !invokedInstall {
+        t.Fatal("expected brew install python3 command to be invoked")
     }
 }
