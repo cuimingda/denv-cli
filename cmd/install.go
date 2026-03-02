@@ -123,6 +123,10 @@ func buildPython3InstallOperations(force bool) ([]string, error) {
 		return nil, fmt.Errorf("homebrew is not installed")
 	}
 
+	if !force && IsCommandAvailable("python3") {
+		return nil, nil
+	}
+
 	if !force {
 		installed, err := IsBrewFormulaInstalled("python3")
 		if err != nil {

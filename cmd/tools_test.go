@@ -773,6 +773,50 @@ func TestInstallCommandDryRunShowsOperationsOnly(t *testing.T) {
 	}
 }
 
+func TestInstallCommandDryRunSkipsPython3AndInstallsFFmpegAndTree(t *testing.T) {
+    oldLookup := executableLookup
+    oldRunner := commandRunner
+    oldRunnerWithOutput := commandRunnerWithOutput
+    executableLookup = func(name string) (string, error) {
+        switch name {
+        case "brew":
+            return "/opt/homebrew/bin/brew", nil
+        case "python3":
+            return "/usr/bin/python3", nil
+        case "ffmpeg", "tree":
+            return "", exec.ErrNotFound
+        default:
+            return "/usr/bin/" + name, nil
+        }
+    }
+    commandRunner = func(_ string, _ ...string) ([]byte, error) {
+        return []byte(""), nil
+    }
+    defer func() {
+        executableLookup = oldLookup
+        commandRunner = oldRunner
+        commandRunnerWithOutput = oldRunnerWithOutput
+    }()
+
+    cmd := NewInstallCmd()
+    cmd.SetArgs([]string{"--dry-run"})
+    out := &bytes.Buffer{}
+    cmd.SetOut(out)
+
+    if err := cmd.Execute(); err != nil {
+        t.Fatalf("install command failed: %v", err)
+    }
+
+    got := strings.TrimSpace(out.String())
+    expected := strings.Join([]string{
+        "Would run: brew install ffmpeg",
+        "Would run: brew install tree",
+    }, "\n")
+    if got != expected {
+        t.Fatalf("unexpected dry-run output, expected %q got %q", expected, got)
+    }
+}
+
 func TestInstallCommandInstallsAllTools(t *testing.T) {
     oldLookup := executableLookup
     oldRunner := commandRunner
