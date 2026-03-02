@@ -192,6 +192,14 @@ func TestIsInstallableTool(t *testing.T) {
         t.Fatal("expected php to be installable")
     }
 
+    if !IsInstallableTool("curl") {
+        t.Fatal("expected curl to be installable")
+    }
+
+    if !IsInstallableTool("git") {
+        t.Fatal("expected git to be installable")
+    }
+
     if IsInstallableTool("npm") {
         t.Fatal("expected npm to be not installable")
     }
@@ -250,6 +258,96 @@ func TestInstallNodeChecksExistingInstallations(t *testing.T) {
 
     if err := InstallNode(); err == nil {
         t.Fatal("expected node install to fail when node is already installed")
+    }
+    if commandCalls != 0 {
+        t.Fatalf("unexpected command invocations, got %d", commandCalls)
+    }
+}
+
+func TestInstallCommandForceBypassesExistingInstallationCheck(t *testing.T) {
+    oldLookup := executableLookup
+    oldRunnerWithOutput := commandRunnerWithOutput
+    executableLookup = func(name string) (string, error) {
+        if name == "brew" || name == "node" || name == "npm" {
+            return "/usr/local/bin/" + name, nil
+        }
+        return "", exec.ErrNotFound
+    }
+    commandInstalled := false
+    commandRunnerWithOutput = func(_ io.Writer, name string, args ...string) error {
+        if name == "brew" && len(args) > 0 && args[0] == "install" && len(args) == 2 && args[1] == "node" {
+            commandInstalled = true
+            return nil
+        }
+        return nil
+    }
+    defer func() {
+        executableLookup = oldLookup
+        commandRunnerWithOutput = oldRunnerWithOutput
+    }()
+
+    cmd := NewInstallCmd()
+    cmd.SetArgs([]string{"--force", "node"})
+    out := &bytes.Buffer{}
+    cmd.SetOut(out)
+
+    if err := cmd.Execute(); err != nil {
+        t.Fatalf("install command failed with --force: %v", err)
+    }
+
+    if !commandInstalled {
+        t.Fatal("expected brew install node command to be executed")
+    }
+}
+
+func TestInstallCurlChecksExistingInstallation(t *testing.T) {
+    oldLookup := executableLookup
+    oldRunner := commandRunner
+    executableLookup = func(name string) (string, error) {
+        if name == "brew" || name == "curl" {
+            return "/usr/local/bin/" + name, nil
+        }
+        return "", exec.ErrNotFound
+    }
+    commandCalls := 0
+    commandRunner = func(_ string, _ ...string) ([]byte, error) {
+        commandCalls++
+        return nil, nil
+    }
+    defer func() {
+        executableLookup = oldLookup
+        commandRunner = oldRunner
+    }()
+
+    if err := InstallCurl(); err == nil {
+        t.Fatal("expected curl install to fail when curl is already installed")
+    }
+    if commandCalls != 0 {
+        t.Fatalf("unexpected command invocations, got %d", commandCalls)
+    }
+}
+
+func TestInstallGitChecksExistingInstallation(t *testing.T) {
+    oldLookup := executableLookup
+    oldRunner := commandRunner
+    executableLookup = func(name string) (string, error) {
+        if name == "brew" || name == "git" {
+            return "/usr/local/bin/" + name, nil
+        }
+        return "", exec.ErrNotFound
+    }
+    commandCalls := 0
+    commandRunner = func(_ string, _ ...string) ([]byte, error) {
+        commandCalls++
+        return nil, nil
+    }
+    defer func() {
+        executableLookup = oldLookup
+        commandRunner = oldRunner
+    }()
+
+    if err := InstallGit(); err == nil {
+        t.Fatal("expected git install to fail when git is already installed")
     }
     if commandCalls != 0 {
         t.Fatalf("unexpected command invocations, got %d", commandCalls)

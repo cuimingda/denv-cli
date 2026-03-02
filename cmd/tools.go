@@ -26,6 +26,8 @@ var installableTools = []string{
     "python3",
     "node",
     "go",
+    "curl",
+    "git",
 }
 
 var (
@@ -176,12 +178,12 @@ func InstallNode() error {
     return nil
 }
 
-func InstallNodeWithOutput(out io.Writer) error {
+func InstallNodeWithOutput(out io.Writer, force bool) error {
     if !IsBrewInstalled() {
         return fmt.Errorf("homebrew is not installed")
     }
 
-    if IsCommandAvailable("node") || IsCommandAvailable("npm") {
+    if !force && (IsCommandAvailable("node") || IsCommandAvailable("npm")) {
         return fmt.Errorf("node is already installed")
     }
 
@@ -208,12 +210,12 @@ func InstallPHP() error {
     return nil
 }
 
-func InstallPHPWithOutput(out io.Writer) error {
+func InstallPHPWithOutput(out io.Writer, force bool) error {
     if !IsBrewInstalled() {
         return fmt.Errorf("homebrew is not installed")
     }
 
-    if IsCommandAvailable("php") {
+    if !force && IsCommandAvailable("php") {
         return fmt.Errorf("php is already installed")
     }
 
@@ -244,17 +246,19 @@ func InstallPython3() error {
     return nil
 }
 
-func InstallPython3WithOutput(out io.Writer) error {
+func InstallPython3WithOutput(out io.Writer, force bool) error {
     if !IsBrewInstalled() {
         return fmt.Errorf("homebrew is not installed")
     }
 
-    installed, err := IsBrewFormulaInstalled("python3")
-    if err != nil {
-        return fmt.Errorf("check python3 install status failed: %w", err)
-    }
-    if installed {
-        return fmt.Errorf("python3 is already installed by homebrew")
+    if !force {
+        installed, err := IsBrewFormulaInstalled("python3")
+        if err != nil {
+            return fmt.Errorf("check python3 install status failed: %w", err)
+        }
+        if installed {
+            return fmt.Errorf("python3 is already installed by homebrew")
+        }
     }
 
     if err := commandRunnerWithOutput(out, "brew", "install", "python3"); err != nil {
@@ -280,12 +284,12 @@ func InstallGo() error {
     return nil
 }
 
-func InstallGoWithOutput(out io.Writer) error {
+func InstallGoWithOutput(out io.Writer, force bool) error {
     if !IsBrewInstalled() {
         return fmt.Errorf("homebrew is not installed")
     }
 
-    if IsCommandAvailable("go") {
+    if !force && IsCommandAvailable("go") {
         return fmt.Errorf("go is already installed")
     }
 
@@ -306,7 +310,75 @@ func InstallTool(name string) error {
         return InstallPython3()
     case "go":
         return InstallGo()
+    case "curl":
+        return InstallCurl()
+    case "git":
+        return InstallGit()
     default:
         return fmt.Errorf("unsupported tool: %s", name)
     }
+}
+
+func InstallCurl() error {
+    if !IsBrewInstalled() {
+        return fmt.Errorf("homebrew is not installed")
+    }
+
+    if IsCommandAvailable("curl") {
+        return fmt.Errorf("curl is already installed")
+    }
+
+    if _, err := commandRunner("brew", "install", "curl"); err != nil {
+        return fmt.Errorf("brew install curl failed: %w", err)
+    }
+
+    return nil
+}
+
+func InstallCurlWithOutput(out io.Writer, force bool) error {
+    if !IsBrewInstalled() {
+        return fmt.Errorf("homebrew is not installed")
+    }
+
+    if !force && IsCommandAvailable("curl") {
+        return fmt.Errorf("curl is already installed")
+    }
+
+    if err := commandRunnerWithOutput(out, "brew", "install", "curl"); err != nil {
+        return fmt.Errorf("brew install curl failed: %w", err)
+    }
+
+    return nil
+}
+
+func InstallGit() error {
+    if !IsBrewInstalled() {
+        return fmt.Errorf("homebrew is not installed")
+    }
+
+    if IsCommandAvailable("git") {
+        return fmt.Errorf("git is already installed")
+    }
+
+    if _, err := commandRunner("brew", "install", "git"); err != nil {
+        return fmt.Errorf("brew install git failed: %w", err)
+    }
+
+    return nil
+}
+
+func InstallGitWithOutput(out io.Writer, force bool) error {
+    if !IsBrewInstalled() {
+        return fmt.Errorf("homebrew is not installed")
+    }
+
+    if !force && IsCommandAvailable("git") {
+        return fmt.Errorf("git is already installed")
+    }
+
+    if err := commandRunnerWithOutput(out, "brew", "install", "git"); err != nil {
+        return fmt.Errorf("brew install git failed: %w", err)
+    }
+
+    return nil
 }
