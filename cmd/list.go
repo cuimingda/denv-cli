@@ -97,7 +97,7 @@ func NewListCmd() *cobra.Command {
                             pathWithOptionalBraces = suffix[idx:]
                             prefix := strings.TrimSpace(suffix[:idx])
                             if installedByHomebrew {
-                                pathWithOptionalBraces = fmt.Sprintf("%s %s", prefix, colorize(colorGreen, pathWithOptionalBraces))
+                                pathWithOptionalBraces = fmt.Sprintf("%s %s", prefix, pathWithOptionalBraces)
                             } else {
                                 pathWithOptionalBraces = fmt.Sprintf("%s %s", prefix, colorize(colorRed, pathWithOptionalBraces))
                             }
@@ -105,7 +105,7 @@ func NewListCmd() *cobra.Command {
                         }
                     } else {
                         if installedByHomebrew {
-                            suffix = colorize(colorGreen, suffix)
+                            suffix = fmt.Sprintf("%s", suffix)
                         } else {
                             suffix = colorize(colorRed, suffix)
                         }
