@@ -7,11 +7,22 @@ import (
 )
 
 func NewInstallCmd() *cobra.Command {
+    longHelp := `Install a supported developer tool.
+Supported tools:
+- php  -> brew install php@8.4
+- python3 -> brew install python3
+- node -> brew install node@24
+- go -> brew install go`
+
     return &cobra.Command{
         Use:   "install <tool_name>",
         Args:  cobra.ExactArgs(1),
-        Short: "Install a supported developer tool (php, python3, node, go)",
-        Long:  "Install a supported developer tool.\nSupported tools: php, python3, node, go.",
+        Short: "Install a supported developer tool: php@8.4, python3, node@24, go",
+        Long:  longHelp,
+        Example: `  denv install php
+  denv install python3
+  denv install node
+  denv install go`,
         RunE: func(cmd *cobra.Command, args []string) error {
             toolName := args[0]
 
