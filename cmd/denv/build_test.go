@@ -51,7 +51,14 @@ func TestGoBuildTargets(t *testing.T) {
 }
 
 func copyBuildFixture(srcRoot, dstRoot string) error {
-    fileList := []string{"go.mod", "go.sum", filepath.Join("cmd", "denv", "main.go"), filepath.Join("cmd", "root.go")}
+    fileList := []string{
+        "go.mod",
+        "go.sum",
+        filepath.Join("cmd", "denv", "main.go"),
+        filepath.Join("cmd", "root.go"),
+        filepath.Join("cmd", "list.go"),
+        filepath.Join("cmd", "tools.go"),
+    }
 
     for _, relPath := range fileList {
         srcPath := filepath.Join(srcRoot, relPath)
