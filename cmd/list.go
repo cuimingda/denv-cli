@@ -54,9 +54,11 @@ func NewListCmdWithService(svc ToolService) *cobra.Command {
 
 			verbosef(cmd, "list started with version=%t path=%t output=%s", showVersion, showPath, mode)
 			start := time.Now()
+			doingf(cmd, "scan supported tools...")
 			items := make([]listItem, 0, len(svc.SupportedTools()))
 			for _, name := range svc.SupportedTools() {
 				verbosef(cmd, "resolving tool: %s", name)
+				doingf(cmd, "checking %s", name)
 				item := listItem{
 					Name:          name,
 					DisplayName:   svc.ToolDisplayName(name),

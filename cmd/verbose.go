@@ -44,3 +44,7 @@ func verbosef(cmd *cobra.Command, format string, args ...any) {
 
 	_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "[verbose] "+format+"\n", args...)
 }
+
+func doingf(cmd *cobra.Command, format string, args ...any) {
+	_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "[doing] "+format+"\n", args...)
+}

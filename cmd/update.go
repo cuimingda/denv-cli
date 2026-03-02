@@ -22,9 +22,11 @@ func NewUpdateCmdWithService(svc CommandService) *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			start := time.Now()
 			supportedTools := svc.SupportedTools()
+			doingf(cmd, "scan %d tools for updates", len(supportedTools))
 			verbosef(cmd, "update started for %d supported tools", len(supportedTools))
 			updated := false
 			for idx, name := range supportedTools {
+				doingf(cmd, "check %d/%d: %s", idx+1, len(supportedTools), name)
 				verbosef(cmd, "checking %d/%d: %s", idx+1, len(supportedTools), name)
 				installed, _, _, err := svc.ToolInstallState(name)
 				if err != nil {
@@ -48,6 +50,7 @@ func NewUpdateCmdWithService(svc CommandService) *cobra.Command {
 				}
 
 				if svc.CompareVersions(current, latest) < 0 {
+					doingf(cmd, "updating %s", name)
 					verbosef(cmd, "%s outdated: current=%s latest=%s", name, current, latest)
 					updateStart := time.Now()
 					if err := svc.UpdateToolWithOutput(cmd.OutOrStdout(), name); err != nil {

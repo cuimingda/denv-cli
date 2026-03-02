@@ -35,10 +35,12 @@ func NewOutdatedCmdWithService(svc CommandService) *cobra.Command {
 			start := time.Now()
 			supported := svc.SupportedTools()
 			verbosef(cmd, "outdated check started for %d tools", len(supported))
+			doingf(cmd, "check outdated status for %d tools", len(supported))
 
 			rows := make([]outdatedItem, 0, len(supported))
 			for _, name := range supported {
 				verbosef(cmd, "checking tool: %s", name)
+				doingf(cmd, "checking %s", name)
 				row := outdatedItem{
 					Name:        name,
 					DisplayName: svc.ToolDisplayName(name),

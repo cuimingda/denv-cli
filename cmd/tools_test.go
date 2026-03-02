@@ -437,6 +437,96 @@ func TestRootVerboseRunsAndLogsInstallDryRun(t *testing.T) {
 	}
 }
 
+func TestInstallCommandOutputsDoingProgress(t *testing.T) {
+	oldLookup := executableLookup
+	oldRunner := commandRunner
+	executableLookup = func(name string) (string, error) {
+		if name == "brew" {
+			return "/opt/homebrew/bin/" + name, nil
+		}
+		return "", exec.ErrNotFound
+	}
+	oldRunnerWithOutput := commandRunnerWithOutput
+	commandRunner = func(_ string, _ ...string) ([]byte, error) {
+		return nil, nil
+	}
+	defer func() {
+		executableLookup = oldLookup
+		commandRunner = oldRunner
+		commandRunnerWithOutput = oldRunnerWithOutput
+	}()
+
+	cmd := NewInstallCmd()
+	out := &bytes.Buffer{}
+	errOut := &bytes.Buffer{}
+	cmd.SetOut(out)
+	cmd.SetErr(errOut)
+	cmd.SetArgs([]string{"--dry-run"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("install command failed: %v", err)
+	}
+
+	if got := strings.TrimSpace(out.String()); got == "" {
+		t.Fatal("expected install output")
+	}
+	if !strings.Contains(errOut.String(), "[doing]") {
+		t.Fatalf("expected doing logs on stderr, got: %q", errOut.String())
+	}
+}
+
+func TestUpdateCommandOutputsDoingProgress(t *testing.T) {
+	oldLookup := executableLookup
+	oldRunner := commandRunner
+	oldRunnerWithOutput := commandRunnerWithOutput
+	executableLookup = func(name string) (string, error) {
+		if name == "brew" || name == "php" || name == "node" {
+			return "/opt/homebrew/bin/" + name, nil
+		}
+		return "", exec.ErrNotFound
+	}
+	commandRunner = func(name string, args ...string) ([]byte, error) {
+		if name == "php" && len(args) == 1 && args[0] == "--version" {
+			return []byte("PHP 7.4.0"), nil
+		}
+		if name == "node" && len(args) == 1 && args[0] == "--version" {
+			return []byte("v20.0.0"), nil
+		}
+		if name == "brew" && len(args) >= 3 && args[0] == "info" && args[1] == "--json=v2" && args[2] == "php" {
+			return []byte(`{"formulae":[{"name":"php","versions":{"stable":"8.0.0"},"installed":[{"version":"7.4.0"}]}]}`), nil
+		}
+		if name == "brew" && len(args) >= 3 && args[0] == "info" && args[1] == "--json=v2" && args[2] == "node" {
+			return []byte(`{"formulae":[{"name":"node","versions":{"stable":"20.0.0"},"installed":[{"version":"20.0.0"}]}]}`), nil
+		}
+		return []byte(""), nil
+	}
+	commandRunnerWithOutput = func(_ io.Writer, name string, args ...string) error {
+		if name == "brew" && len(args) == 2 && args[0] == "upgrade" && args[1] == "php" {
+			return nil
+		}
+		return nil
+	}
+	defer func() {
+		executableLookup = oldLookup
+		commandRunner = oldRunner
+		commandRunnerWithOutput = oldRunnerWithOutput
+	}()
+
+	cmd := NewUpdateCmd()
+	out := &bytes.Buffer{}
+	errOut := &bytes.Buffer{}
+	cmd.SetOut(out)
+	cmd.SetErr(errOut)
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("update command failed: %v", err)
+	}
+
+	if !strings.Contains(errOut.String(), "[doing]") {
+		t.Fatalf("expected doing logs on stderr, got: %q", errOut.String())
+	}
+}
+
 func TestUpdateCommandUpdatesOnlyOutdatedTools(t *testing.T) {
 	oldLookup := executableLookup
     oldRunner := commandRunner
