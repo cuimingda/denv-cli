@@ -29,6 +29,9 @@ var installableTools = []string{
     "go",
     "curl",
     "git",
+    "ffmpeg",
+    "tree",
+    "gh",
 }
 
 var (
@@ -418,6 +421,12 @@ func InstallTool(name string) error {
         return InstallCurl()
     case "git":
         return InstallGit()
+    case "ffmpeg":
+        return InstallFFmpeg()
+    case "tree":
+        return InstallTree()
+    case "gh":
+        return InstallGH()
     default:
         return fmt.Errorf("unsupported tool: %s", name)
     }
@@ -490,6 +499,102 @@ func InstallGitWithOutput(out io.Writer, force bool) error {
 
     if err := commandRunnerWithOutput(out, "brew", "install", "git"); err != nil {
         return fmt.Errorf("brew install git failed: %w", err)
+    }
+
+    return nil
+}
+
+func InstallFFmpeg() error {
+    if !IsBrewInstalled() {
+        return fmt.Errorf("homebrew is not installed")
+    }
+
+    if IsCommandAvailable("ffmpeg") {
+        return fmt.Errorf("ffmpeg is already installed")
+    }
+
+    if _, err := commandRunner("brew", "install", "ffmpeg"); err != nil {
+        return fmt.Errorf("brew install ffmpeg failed: %w", err)
+    }
+
+    return nil
+}
+
+func InstallFFmpegWithOutput(out io.Writer, force bool) error {
+    if !IsBrewInstalled() {
+        return fmt.Errorf("homebrew is not installed")
+    }
+
+    if !force && IsCommandAvailable("ffmpeg") {
+        return fmt.Errorf("ffmpeg is already installed")
+    }
+
+    if err := commandRunnerWithOutput(out, "brew", "install", "ffmpeg"); err != nil {
+        return fmt.Errorf("brew install ffmpeg failed: %w", err)
+    }
+
+    return nil
+}
+
+func InstallTree() error {
+    if !IsBrewInstalled() {
+        return fmt.Errorf("homebrew is not installed")
+    }
+
+    if IsCommandAvailable("tree") {
+        return fmt.Errorf("tree is already installed")
+    }
+
+    if _, err := commandRunner("brew", "install", "tree"); err != nil {
+        return fmt.Errorf("brew install tree failed: %w", err)
+    }
+
+    return nil
+}
+
+func InstallTreeWithOutput(out io.Writer, force bool) error {
+    if !IsBrewInstalled() {
+        return fmt.Errorf("homebrew is not installed")
+    }
+
+    if !force && IsCommandAvailable("tree") {
+        return fmt.Errorf("tree is already installed")
+    }
+
+    if err := commandRunnerWithOutput(out, "brew", "install", "tree"); err != nil {
+        return fmt.Errorf("brew install tree failed: %w", err)
+    }
+
+    return nil
+}
+
+func InstallGH() error {
+    if !IsBrewInstalled() {
+        return fmt.Errorf("homebrew is not installed")
+    }
+
+    if IsCommandAvailable("gh") {
+        return fmt.Errorf("gh is already installed")
+    }
+
+    if _, err := commandRunner("brew", "install", "gh"); err != nil {
+        return fmt.Errorf("brew install gh failed: %w", err)
+    }
+
+    return nil
+}
+
+func InstallGHWithOutput(out io.Writer, force bool) error {
+    if !IsBrewInstalled() {
+        return fmt.Errorf("homebrew is not installed")
+    }
+
+    if !force && IsCommandAvailable("gh") {
+        return fmt.Errorf("gh is already installed")
+    }
+
+    if err := commandRunnerWithOutput(out, "brew", "install", "gh"); err != nil {
+        return fmt.Errorf("brew install gh failed: %w", err)
     }
 
     return nil

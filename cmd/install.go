@@ -9,13 +9,16 @@ import (
 
 func NewInstallCmd() *cobra.Command {
 	longHelp := `Install all supported developer tools.
-Supported tools:
-- php  -> brew install php
-- python3 -> brew install python3
-- node -> brew install node
-- go -> brew install go
-- curl -> brew install curl
-- git -> brew install git`
+	Supported tools:
+	- php  -> brew install php
+	- python3 -> brew install python3
+	- node -> brew install node
+	- go -> brew install go
+	- curl -> brew install curl
+	- git -> brew install git
+	- ffmpeg -> brew install ffmpeg
+	- tree -> brew install tree
+	- gh -> brew install gh`
 
 	cmd := &cobra.Command{
 		Use:     "install",
@@ -55,6 +58,12 @@ func installToolWithOutput(out io.Writer, toolName string, force bool) error {
 		return InstallCurlWithOutput(out, force)
 	case "git":
 		return InstallGitWithOutput(out, force)
+	case "ffmpeg":
+		return InstallFFmpegWithOutput(out, force)
+	case "tree":
+		return InstallTreeWithOutput(out, force)
+	case "gh":
+		return InstallGHWithOutput(out, force)
 	default:
 		return fmt.Errorf("unsupported tool: %s", toolName)
 	}
