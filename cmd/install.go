@@ -44,7 +44,7 @@ Supported tools:
 
 			if dryRun {
 				for _, operation := range operations {
-					if _, err := fmt.Fprintf(cmd.OutOrStdout(), "Would run: %s\n", operation); err != nil {
+					if _, err := fmt.Fprintf(cmd.OutOrStdout(), "Would run: %s\n", operation.String()); err != nil {
 						return err
 					}
 				}

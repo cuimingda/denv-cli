@@ -32,6 +32,7 @@ type ToolService interface {
 	ToolLatestVersion(name string) (string, error)
 	ToolDisplayName(name string) string
 	CompareVersions(current string, latest string) int
+	IsManagedByHomebrew(path string) bool
 	IsInstallableTool(name string) bool
 	IsBrewInstalled() bool
 	IsBrewFormulaInstalled(formula string) (bool, error)
@@ -39,18 +40,18 @@ type ToolService interface {
 }
 
 type OperationService interface {
-	BuildInstallOperations(force bool) ([]string, error)
-	BuildInstallOperationsForTool(toolName string, force bool) ([]string, error)
-	BuildNodeInstallOperations(force bool) ([]string, error)
-	BuildPHPInstallOperations(force bool) ([]string, error)
-	BuildPython3InstallOperations(force bool) ([]string, error)
-	BuildGoInstallOperations(force bool) ([]string, error)
-	BuildCurlInstallOperations(force bool) ([]string, error)
-	BuildGitInstallOperations(force bool) ([]string, error)
-	BuildFFmpegInstallOperations(force bool) ([]string, error)
-	BuildTreeInstallOperations(force bool) ([]string, error)
-	BuildGHInstallOperations(force bool) ([]string, error)
-	RunInstallOperation(out io.Writer, op string) error
+	BuildInstallOperations(force bool) ([]denv.InstallOperation, error)
+	BuildInstallOperationsForTool(toolName string, force bool) ([]denv.InstallOperation, error)
+	BuildNodeInstallOperations(force bool) ([]denv.InstallOperation, error)
+	BuildPHPInstallOperations(force bool) ([]denv.InstallOperation, error)
+	BuildPython3InstallOperations(force bool) ([]denv.InstallOperation, error)
+	BuildGoInstallOperations(force bool) ([]denv.InstallOperation, error)
+	BuildCurlInstallOperations(force bool) ([]denv.InstallOperation, error)
+	BuildGitInstallOperations(force bool) ([]denv.InstallOperation, error)
+	BuildFFmpegInstallOperations(force bool) ([]denv.InstallOperation, error)
+	BuildTreeInstallOperations(force bool) ([]denv.InstallOperation, error)
+	BuildGHInstallOperations(force bool) ([]denv.InstallOperation, error)
+	RunInstallOperation(out io.Writer, op denv.InstallOperation) error
 	UpdateToolWithOutput(out io.Writer, name string) error
 	InstallNodeWithOutput(out io.Writer, force bool) error
 	InstallPHPWithOutput(out io.Writer, force bool) error

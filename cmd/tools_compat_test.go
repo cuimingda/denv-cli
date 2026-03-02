@@ -143,49 +143,105 @@ func resolvedBrewBinaryPath(name, formula string) (string, error) {
 }
 
 func buildInstallOperations(force bool) ([]string, error) {
-	return denvService().BuildInstallOperations(force)
+	ops, err := denvService().BuildInstallOperations(force)
+	if err != nil {
+		return nil, err
+	}
+	return denvOperationsToStrings(ops), nil
 }
 
 func buildInstallOperationsForTool(toolName string, force bool) ([]string, error) {
-	return denvService().BuildInstallOperationsForTool(toolName, force)
+	ops, err := denvService().BuildInstallOperationsForTool(toolName, force)
+	if err != nil {
+		return nil, err
+	}
+	return denvOperationsToStrings(ops), nil
 }
 
 func buildNodeInstallOperations(force bool) ([]string, error) {
-	return denvService().BuildNodeInstallOperations(force)
+	ops, err := denvService().BuildNodeInstallOperations(force)
+	if err != nil {
+		return nil, err
+	}
+	return denvOperationsToStrings(ops), nil
 }
 
 func buildPHPInstallOperations(force bool) ([]string, error) {
-	return denvService().BuildPHPInstallOperations(force)
+	ops, err := denvService().BuildPHPInstallOperations(force)
+	if err != nil {
+		return nil, err
+	}
+	return denvOperationsToStrings(ops), nil
 }
 
 func buildPython3InstallOperations(force bool) ([]string, error) {
-	return denvService().BuildPython3InstallOperations(force)
+	ops, err := denvService().BuildPython3InstallOperations(force)
+	if err != nil {
+		return nil, err
+	}
+	return denvOperationsToStrings(ops), nil
 }
 
 func buildGoInstallOperations(force bool) ([]string, error) {
-	return denvService().BuildGoInstallOperations(force)
+	ops, err := denvService().BuildGoInstallOperations(force)
+	if err != nil {
+		return nil, err
+	}
+	return denvOperationsToStrings(ops), nil
 }
 
 func buildCurlInstallOperations(force bool) ([]string, error) {
-	return denvService().BuildCurlInstallOperations(force)
+	ops, err := denvService().BuildCurlInstallOperations(force)
+	if err != nil {
+		return nil, err
+	}
+	return denvOperationsToStrings(ops), nil
 }
 
 func buildGitInstallOperations(force bool) ([]string, error) {
-	return denvService().BuildGitInstallOperations(force)
+	ops, err := denvService().BuildGitInstallOperations(force)
+	if err != nil {
+		return nil, err
+	}
+	return denvOperationsToStrings(ops), nil
 }
 
 func buildFFmpegInstallOperations(force bool) ([]string, error) {
-	return denvService().BuildFFmpegInstallOperations(force)
+	ops, err := denvService().BuildFFmpegInstallOperations(force)
+	if err != nil {
+		return nil, err
+	}
+	return denvOperationsToStrings(ops), nil
 }
 
 func buildTreeInstallOperations(force bool) ([]string, error) {
-	return denvService().BuildTreeInstallOperations(force)
+	ops, err := denvService().BuildTreeInstallOperations(force)
+	if err != nil {
+		return nil, err
+	}
+	return denvOperationsToStrings(ops), nil
 }
 
 func buildGHInstallOperations(force bool) ([]string, error) {
-	return denvService().BuildGHInstallOperations(force)
+	ops, err := denvService().BuildGHInstallOperations(force)
+	if err != nil {
+		return nil, err
+	}
+	return denvOperationsToStrings(ops), nil
 }
 
 func runInstallOperation(out io.Writer, op string) error {
-	return denvService().RunInstallOperation(out, op)
+	command, err := denv.ParseCommandSpec(op)
+	if err != nil {
+		return err
+	}
+	return denvService().RunInstallOperation(out, denv.InstallOperation{Spec: command})
+}
+
+func denvOperationsToStrings(ops []denv.InstallOperation) []string {
+	out := make([]string, 0, len(ops))
+	for _, op := range ops {
+		out = append(out, op.String())
+	}
+	return out
 }
