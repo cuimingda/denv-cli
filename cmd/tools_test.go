@@ -308,13 +308,13 @@ func TestInstallCommandShowsHomebrewOutput(t *testing.T) {
         return "", exec.ErrNotFound
     }
     commandRunner = func(name string, args ...string) ([]byte, error) {
-        if name == "brew" && len(args) > 0 && args[0] == "install" && len(args) == 2 && args[1] == "node@24" {
+        if name == "brew" && len(args) > 0 && args[0] == "install" && len(args) == 2 && args[1] == "node" {
             return []byte("Homebrew output: success\n"), nil
         }
         return nil, nil
     }
     commandRunnerWithOutput = func(out io.Writer, name string, args ...string) error {
-        if name == "brew" && len(args) > 0 && args[0] == "install" && len(args) == 2 && args[1] == "node@24" {
+        if name == "brew" && len(args) > 0 && args[0] == "install" && len(args) == 2 && args[1] == "node" {
             _, _ = out.Write([]byte("Homebrew output: success\n"))
             return nil
         }

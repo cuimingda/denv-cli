@@ -9,15 +9,15 @@ import (
 func NewInstallCmd() *cobra.Command {
     longHelp := `Install a supported developer tool.
 Supported tools:
-- php  -> brew install php@8.4
+- php  -> brew install php
 - python3 -> brew install python3
-- node -> brew install node@24
+- node -> brew install node
 - go -> brew install go`
 
     return &cobra.Command{
         Use:   "install <tool_name>",
         Args:  cobra.ExactArgs(1),
-        Short: "Install a supported developer tool: php@8.4, python3, node@24, go",
+        Short: "Install a supported developer tool: php, python3, node, go",
         Long:  longHelp,
         Example: `  denv install php
   denv install python3

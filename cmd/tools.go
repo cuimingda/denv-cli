@@ -169,7 +169,7 @@ func InstallNode() error {
         return fmt.Errorf("node is already installed")
     }
 
-    if _, err := commandRunner("brew", "install", "node@24"); err != nil {
+    if _, err := commandRunner("brew", "install", "node"); err != nil {
         return fmt.Errorf("brew install node failed: %w", err)
     }
 
@@ -185,7 +185,7 @@ func InstallNodeWithOutput(out io.Writer) error {
         return fmt.Errorf("node is already installed")
     }
 
-    if err := commandRunnerWithOutput(out, "brew", "install", "node@24"); err != nil {
+    if err := commandRunnerWithOutput(out, "brew", "install", "node"); err != nil {
         return fmt.Errorf("brew install node failed: %w", err)
     }
 
@@ -201,7 +201,7 @@ func InstallPHP() error {
         return fmt.Errorf("php is already installed")
     }
 
-    if _, err := commandRunner("brew", "install", "php@8.4"); err != nil {
+    if _, err := commandRunner("brew", "install", "php"); err != nil {
         return fmt.Errorf("brew install php failed: %w", err)
     }
 
@@ -217,7 +217,7 @@ func InstallPHPWithOutput(out io.Writer) error {
         return fmt.Errorf("php is already installed")
     }
 
-    if err := commandRunnerWithOutput(out, "brew", "install", "php@8.4"); err != nil {
+    if err := commandRunnerWithOutput(out, "brew", "install", "php"); err != nil {
         return fmt.Errorf("brew install php failed: %w", err)
     }
 
