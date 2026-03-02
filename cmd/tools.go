@@ -1,6 +1,7 @@
 package cmd
 
 import (
+    "encoding/json"
     "fmt"
     "io"
     "os/exec"
@@ -58,6 +59,7 @@ var toolVersionCommands = map[string][]string{
     "gh":      {"--version"},
     "git":     {"--version"},
     "tree":    {"--version"},
+    "ffmpeg":  {"--version"},
 }
 
 var toolDisplayNames = map[string]string{
@@ -111,10 +113,23 @@ func CommandPath(name string) (string, error) {
 }
 
 func ToolVersion(name string) (string, error) {
-    if name == "ffmpeg" {
-        return toolVersionFromBrewList("ffmpeg")
+    return toolVersionFromCommand(name)
+}
+
+func ToolVersionForOutdated(name string) (string, error) {
+    if name == "npm" {
+        return toolVersionFromCommand("npm")
     }
 
+    formula, ok := brewFormulaForTool(name)
+    if !ok {
+        return toolVersionFromCommand(name)
+    }
+
+    return toolVersionFromBrewList(formula)
+}
+
+func toolVersionFromCommand(name string) (string, error) {
     cmdArgs, ok := toolVersionCommands[name]
     if !ok {
         return "", fmt.Errorf("unsupported tool: %s", name)
@@ -177,7 +192,41 @@ func toolVersionFromBrewList(formula string) (string, error) {
         return "", fmt.Errorf("brew info failed: %w", err)
     }
 
-    return parseBrewStableVersion(output)
+    type formulaInfo struct {
+        Name      string `json:"name"`
+        Versions  struct {
+            Stable string `json:"stable"`
+        } `json:"versions"`
+        Revision  int `json:"revision"`
+        Installed []struct {
+            Version string `json:"version"`
+        } `json:"installed"`
+    }
+
+    var payload struct {
+        Formulae []formulaInfo `json:"formulae"`
+    }
+
+    if err := json.Unmarshal(output, &payload); err == nil {
+        if len(payload.Formulae) > 0 {
+            installed := payload.Formulae[0].Installed
+            for i := len(installed) - 1; i >= 0; i-- {
+                if strings.TrimSpace(installed[i].Version) != "" {
+                    return installed[i].Version, nil
+                }
+            }
+
+            stable := payload.Formulae[0].Versions.Stable
+            if payload.Formulae[0].Revision > 0 {
+                return fmt.Sprintf("%s_%d", stable, payload.Formulae[0].Revision), nil
+            }
+            if stable != "" {
+                return stable, nil
+            }
+        }
+    }
+
+    return "", fmt.Errorf("failed to parse brew installed version")
 }
 
 func extractVersion(out string) (string, error) {

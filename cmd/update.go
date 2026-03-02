@@ -17,7 +17,7 @@ func NewUpdateCmd() *cobra.Command {
 					continue
 				}
 
-				current, err := ToolVersion(name)
+			current, err := ToolVersionForOutdated(name)
 				if err != nil {
 					return err
 				}
@@ -45,4 +45,3 @@ func NewUpdateCmd() *cobra.Command {
 		},
 	}
 }
-

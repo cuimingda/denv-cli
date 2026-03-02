@@ -187,7 +187,7 @@ func TestExtractVersion(t *testing.T) {
     }
 }
 
-func TestToolVersionUsesBrewForFfmpeg(t *testing.T) {
+func TestToolVersionUsesCommandForFfmpeg(t *testing.T) {
     oldLookup := executableLookup
     oldRunner := commandRunner
     executableLookup = func(name string) (string, error) {
@@ -199,15 +199,8 @@ func TestToolVersionUsesBrewForFfmpeg(t *testing.T) {
     commandCalled := []string{}
     commandRunner = func(name string, args ...string) ([]byte, error) {
         commandCalled = append(commandCalled, name+" "+strings.Join(args, " "))
-        if name == "brew" && len(args) >= 2 && args[0] == "info" && args[1] == "ffmpeg" {
-            return []byte(`ffmpeg ✔: stable 8.0.1 (bottled), HEAD
-https://ffmpeg.org/
-Installed
-/opt/homebrew/Cellar/ffmpeg/7.1.1_3 (287 files, 54.8MB)
-/opt/homebrew/Cellar/ffmpeg/8.0_1 (285 files, 55.3MB) *`), nil
-        }
-        if name == "brew" && len(args) >= 3 && args[0] == "info" && args[1] == "--json=v2" && args[2] == "ffmpeg" {
-            return []byte(`{"formulae":[{"name":"ffmpeg","versions":{"stable":"8.0.1"}}]}`), nil
+        if name == "ffmpeg" && len(args) > 0 && args[0] == "--version" {
+            return []byte("ffmpeg version 8.0.1_1"), nil
         }
         return []byte(""), nil
     }
@@ -220,28 +213,78 @@ Installed
     if err != nil {
         t.Fatalf("ToolVersion(ffmpeg) failed: %v", err)
     }
+    if got != "8.0.1" {
+        t.Fatalf("expected version from ffmpeg command, got %q", got)
+    }
+
+    calledFfmpeg := false
+    calledBrewInfoJSON := false
+    for _, call := range commandCalled {
+        if call == "ffmpeg --version" {
+            calledFfmpeg = true
+        }
+        if call == "brew info --json=v2 ffmpeg" {
+            calledBrewInfoJSON = true
+        }
+    }
+    if !calledFfmpeg {
+        t.Fatal("expected ffmpeg binary to be called for list version")
+    }
+    if calledBrewInfoJSON {
+        t.Fatal("expected no brew json call for list version")
+    }
+}
+
+func TestToolVersionForOutdatedUsesBrewForFfmpeg(t *testing.T) {
+    oldLookup := executableLookup
+    oldRunner := commandRunner
+    executableLookup = func(name string) (string, error) {
+        if name == "ffmpeg" || name == "brew" {
+            return "/opt/homebrew/bin/" + name, nil
+        }
+        return "", exec.ErrNotFound
+    }
+
+    commandCalled := []string{}
+    commandRunner = func(name string, args ...string) ([]byte, error) {
+        commandCalled = append(commandCalled, name+" "+strings.Join(args, " "))
+        if name == "brew" && len(args) >= 2 && args[0] == "info" && args[1] == "ffmpeg" {
+            return []byte(`ffmpeg ✔: stable 8.0.1 (bottled), HEAD
+https://ffmpeg.org/
+Installed
+/opt/homebrew/Cellar/ffmpeg/7.1.1_3 (287 files, 54.8MB)
+/opt/homebrew/Cellar/ffmpeg/8.0_1 (285 files, 55.3MB) *`), nil
+        }
+        return []byte(""), nil
+    }
+    defer func() {
+        executableLookup = oldLookup
+        commandRunner = oldRunner
+    }()
+
+    got, err := ToolVersionForOutdated("ffmpeg")
+    if err != nil {
+        t.Fatalf("ToolVersionForOutdated(ffmpeg) failed: %v", err)
+    }
     if got != "8.0_1" {
         t.Fatalf("expected version from brew, got %q", got)
     }
 
     calledBrewInfo := false
-    calledBrewInfoJSON := false
+    calledFfmpeg := false
     for _, call := range commandCalled {
         if call == "brew info ffmpeg" {
             calledBrewInfo = true
         }
-        if call == "brew info --json=v2 ffmpeg" {
-            calledBrewInfoJSON = true
-        }
-        if strings.HasPrefix(call, "ffmpeg ") {
-            t.Fatalf("expected not to call ffmpeg binary directly for version, got %q", call)
+        if call == "ffmpeg --version" {
+            calledFfmpeg = true
         }
     }
     if !calledBrewInfo {
         t.Fatal("expected to call brew info ffmpeg")
     }
-    if calledBrewInfoJSON {
-        t.Fatal("unexpected fallback to JSON parser while installed path exists")
+    if calledFfmpeg {
+        t.Fatal("expected not to call ffmpeg binary directly for outdated version")
     }
 }
 
@@ -324,10 +367,10 @@ func TestUpdateCommandUpdatesOnlyOutdatedTools(t *testing.T) {
             return []byte("9.0.0"), nil
         }
         if name == "brew" && len(args) >= 3 && args[0] == "info" && args[1] == "--json=v2" && args[2] == "php" {
-            return []byte(`{"formulae":[{"versions":{"stable":"8.0.0"}}]}`), nil
+            return []byte(`{"formulae":[{"name":"php","versions":{"stable":"8.0.0"},"installed":[{"version":"7.4.0"}]}]}`), nil
         }
         if name == "brew" && len(args) >= 3 && args[0] == "info" && args[1] == "--json=v2" && args[2] == "node" {
-            return []byte(`{"formulae":[{"versions":{"stable":"20.0.0"}}]}`), nil
+            return []byte(`{"formulae":[{"name":"node","versions":{"stable":"20.0.0"},"installed":[{"version":"20.0.0"}]}]}`), nil
         }
         return []byte(""), nil
     }
@@ -383,7 +426,7 @@ func TestUpdateCommandHasNoUpdates(t *testing.T) {
             return []byte("7.4.0"), nil
         }
         if name == "brew" && len(args) >= 3 && args[0] == "info" && args[1] == "--json=v2" && args[2] == "php" {
-            return []byte(`{"formulae":[{"versions":{"stable":"7.4.0"}}]}`), nil
+            return []byte(`{"formulae":[{"name":"php","versions":{"stable":"7.4.0"},"installed":[{"version":"7.4.0"}]}]}`), nil
         }
         return []byte(""), nil
     }

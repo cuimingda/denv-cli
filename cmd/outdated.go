@@ -21,7 +21,7 @@ func NewOutdatedCmd() *cobra.Command {
                     continue
                 }
 
-                current, err := ToolVersion(name)
+                current, err := ToolVersionForOutdated(name)
                 if err != nil {
                     if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s %s\n", ToolDisplayName(name), "invalid current version"); err != nil {
                         return err
