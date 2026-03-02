@@ -456,11 +456,11 @@ func TestUpdateCommandHasNoUpdates(t *testing.T) {
     }
 }
 
-func TestInstallCommandRejectsUnsupportedTool(t *testing.T) {
+func TestInstallCommandRejectsArguments(t *testing.T) {
     cmd := NewInstallCmd()
-    cmd.SetArgs([]string{"rust"})
+    cmd.SetArgs([]string{"php"})
     if err := cmd.Execute(); err == nil {
-        t.Fatal("expected unsupported tool to fail")
+        t.Fatal("expected extra arguments to be rejected")
     }
 }
 
@@ -494,6 +494,7 @@ func TestInstallNodeChecksExistingInstallations(t *testing.T) {
 func TestInstallCommandForceBypassesExistingInstallationCheck(t *testing.T) {
     oldLookup := executableLookup
     oldRunnerWithOutput := commandRunnerWithOutput
+    oldRunner := commandRunner
     executableLookup = func(name string) (string, error) {
         if name == "brew" || name == "node" || name == "npm" {
             return "/usr/local/bin/" + name, nil
@@ -508,13 +509,17 @@ func TestInstallCommandForceBypassesExistingInstallationCheck(t *testing.T) {
         }
         return nil
     }
+    commandRunner = func(_ string, _ ...string) ([]byte, error) {
+        return nil, nil
+    }
     defer func() {
         executableLookup = oldLookup
         commandRunnerWithOutput = oldRunnerWithOutput
+        commandRunner = oldRunner
     }()
 
     cmd := NewInstallCmd()
-    cmd.SetArgs([]string{"--force", "node"})
+    cmd.SetArgs([]string{"--force"})
     out := &bytes.Buffer{}
     cmd.SetOut(out)
 
@@ -652,7 +657,7 @@ func TestInstallCommandShowsHomebrewOutput(t *testing.T) {
     }()
 
     cmd := NewInstallCmd()
-    cmd.SetArgs([]string{"node"})
+    cmd.SetArgs([]string{})
     out := &bytes.Buffer{}
     cmd.SetOut(out)
 
@@ -672,6 +677,7 @@ func TestInstallCommandShowsHomebrewOutput(t *testing.T) {
 func TestInstallCommandCurlLinksAfterInstall(t *testing.T) {
     oldLookup := executableLookup
     oldRunnerWithOutput := commandRunnerWithOutput
+    oldRunner := commandRunner
     executableLookup = func(name string) (string, error) {
         if name == "brew" {
             return "/opt/homebrew/bin/brew", nil
@@ -680,6 +686,9 @@ func TestInstallCommandCurlLinksAfterInstall(t *testing.T) {
             return "", exec.ErrNotFound
         }
         return "", exec.ErrNotFound
+    }
+    commandRunner = func(_ string, _ ...string) ([]byte, error) {
+        return nil, nil
     }
 
     installCalled := false
@@ -700,10 +709,11 @@ func TestInstallCommandCurlLinksAfterInstall(t *testing.T) {
     defer func() {
         executableLookup = oldLookup
         commandRunnerWithOutput = oldRunnerWithOutput
+        commandRunner = oldRunner
     }()
 
     cmd := NewInstallCmd()
-    cmd.SetArgs([]string{"curl"})
+    cmd.SetArgs([]string{})
     out := &bytes.Buffer{}
     cmd.SetOut(out)
 
@@ -716,5 +726,60 @@ func TestInstallCommandCurlLinksAfterInstall(t *testing.T) {
     }
     if !linkCalled {
         t.Fatal("expected brew link curl --force command to be invoked")
+    }
+}
+
+func TestInstallCommandInstallsAllTools(t *testing.T) {
+    oldLookup := executableLookup
+    oldRunner := commandRunner
+    oldRunnerWithOutput := commandRunnerWithOutput
+    executableLookup = func(name string) (string, error) {
+        if name == "brew" {
+            return "/opt/homebrew/bin/brew", nil
+        }
+        return "", exec.ErrNotFound
+    }
+
+    installed := map[string]bool{}
+    linked := false
+    commandRunner = func(_ string, _ ...string) ([]byte, error) {
+        return nil, nil
+    }
+    commandRunnerWithOutput = func(_ io.Writer, name string, args ...string) error {
+        if name != "brew" {
+            return nil
+        }
+        if len(args) == 2 && args[0] == "install" {
+            installed[args[1]] = true
+            return nil
+        }
+        if len(args) == 3 && args[0] == "link" && args[1] == "curl" && args[2] == "--force" {
+            linked = true
+            return nil
+        }
+        return nil
+    }
+
+    defer func() {
+        executableLookup = oldLookup
+        commandRunner = oldRunner
+        commandRunnerWithOutput = oldRunnerWithOutput
+    }()
+
+    cmd := NewInstallCmd()
+    out := &bytes.Buffer{}
+    cmd.SetOut(out)
+
+    if err := cmd.Execute(); err != nil {
+        t.Fatalf("install command failed: %v", err)
+    }
+
+    for _, name := range InstallableTools() {
+        if !installed[name] {
+            t.Fatalf("expected install %q to be invoked, got: %v", name, installed)
+        }
+    }
+    if !linked {
+        t.Fatal("expected brew link curl --force to be invoked")
     }
 }

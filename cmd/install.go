@@ -1,13 +1,14 @@
 package cmd
 
 import (
-    "fmt"
+	"fmt"
+	"io"
 
-    "github.com/spf13/cobra"
+	"github.com/spf13/cobra"
 )
 
 func NewInstallCmd() *cobra.Command {
-    longHelp := `Install a supported developer tool.
+	longHelp := `Install all supported developer tools.
 Supported tools:
 - php  -> brew install php
 - python3 -> brew install python3
@@ -16,52 +17,45 @@ Supported tools:
 - curl -> brew install curl
 - git -> brew install git`
 
-    cmd := &cobra.Command{
-        Use:   "install <tool_name>",
-        Args:  cobra.ExactArgs(1),
-        Short: "Install a supported developer tool: php, python3, node, go, curl, git",
-        Long:  longHelp,
-        Example: `  denv install php
-  denv install python3
-  denv install node
-  denv install go
-  denv install curl
-  denv install git`,
-        RunE: func(cmd *cobra.Command, args []string) error {
-            toolName := args[0]
-            force, _ := cmd.Flags().GetBool("force")
+	cmd := &cobra.Command{
+		Use:     "install",
+		Args:    cobra.NoArgs,
+		Short:   "Install supported developer tools",
+		Long:    longHelp,
+		Example: "  denv install",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			force, _ := cmd.Flags().GetBool("force")
 
-            if !IsInstallableTool(toolName) {
-                return fmt.Errorf("unsupported tool: %s", toolName)
-            }
+			for _, toolName := range InstallableTools() {
+				if err := installToolWithOutput(cmd.OutOrStdout(), toolName, force); err != nil {
+					return err
+				}
+			}
 
-            var err error
-            switch toolName {
-            case "node":
-                err = InstallNodeWithOutput(cmd.OutOrStdout(), force)
-            case "php":
-                err = InstallPHPWithOutput(cmd.OutOrStdout(), force)
-            case "python3":
-                err = InstallPython3WithOutput(cmd.OutOrStdout(), force)
-            case "go":
-                err = InstallGoWithOutput(cmd.OutOrStdout(), force)
-            case "curl":
-                err = InstallCurlWithOutput(cmd.OutOrStdout(), force)
-            case "git":
-                err = InstallGitWithOutput(cmd.OutOrStdout(), force)
-            default:
-                return fmt.Errorf("unsupported tool: %s", toolName)
-            }
+			_, outErr := fmt.Fprintln(cmd.OutOrStdout(), "install done")
+			return outErr
+		},
+	}
 
-            if err != nil {
-                return err
-            }
+	cmd.Flags().Bool("force", false, "install even if the tool already exists")
+	return cmd
+}
 
-            _, outErr := fmt.Fprintln(cmd.OutOrStdout(), "done")
-            return outErr
-        },
-    }
-
-    cmd.Flags().Bool("force", false, "install even if the tool already exists")
-    return cmd
+func installToolWithOutput(out io.Writer, toolName string, force bool) error {
+	switch toolName {
+	case "node":
+		return InstallNodeWithOutput(out, force)
+	case "php":
+		return InstallPHPWithOutput(out, force)
+	case "python3":
+		return InstallPython3WithOutput(out, force)
+	case "go":
+		return InstallGoWithOutput(out, force)
+	case "curl":
+		return InstallCurlWithOutput(out, force)
+	case "git":
+		return InstallGitWithOutput(out, force)
+	default:
+		return fmt.Errorf("unsupported tool: %s", toolName)
+	}
 }
