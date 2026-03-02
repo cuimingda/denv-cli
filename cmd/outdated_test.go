@@ -138,6 +138,13 @@ func TestOutdatedHandlesMissingTool(t *testing.T) {
         return "", exec.ErrNotFound
     }
     commandRunner = func(name string, args ...string) ([]byte, error) {
+        if name == "brew" && len(args) >= 3 && args[0] == "info" {
+            formula := args[2]
+            return []byte(`{"formulae":[{"name":"` + formula + `","versions":{"stable":"8.0.0"}}]}`), nil
+        }
+        if name == "npm" && len(args) >= 3 && args[0] == "view" && args[1] == "npm" && args[2] == "version" {
+            return []byte("11.0.0"), nil
+        }
         return []byte(""), nil
     }
     defer func() {
@@ -160,7 +167,11 @@ func TestOutdatedHandlesMissingTool(t *testing.T) {
     }
 
     for _, name := range SupportedTools() {
-        expected := name + " not found"
+        latest := "8.0.0"
+        if name == "npm" {
+            latest = "11.0.0"
+        }
+        expected := name + " <not installed> " + latest
         for _, line := range lines {
             if strings.TrimSpace(line) == expected {
                 goto found
