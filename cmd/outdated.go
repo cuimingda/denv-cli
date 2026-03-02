@@ -141,24 +141,6 @@ func toolLatestVersionByNpm() (string, error) {
     return extractVersion(string(output))
 }
 
-func brewFormulaForTool(name string) (string, bool) {
-    formulas := map[string]string{
-        "php":     "php",
-        "python3": "python3",
-        "node":    "node",
-        "go":      "go",
-        "npm":     "node",
-        "curl":    "curl",
-        "gh":      "gh",
-        "git":     "git",
-        "ffmpeg":  "ffmpeg",
-        "tree":    "tree",
-    }
-
-    formula, ok := formulas[name]
-    return formula, ok
-}
-
 func cmpVersions(current string, latest string) int {
     currentParts := splitVersionParts(current)
     latestParts := splitVersionParts(latest)

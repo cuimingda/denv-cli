@@ -1,44 +1,19 @@
 package cmd
 
 import (
-    "encoding/json"
-    "fmt"
-    "io"
-    "os/exec"
-    "regexp"
-    "strings"
+	"encoding/json"
+	"fmt"
+	"io"
+	"os/exec"
+	"regexp"
+	"strings"
 )
 
-var listedTools = []string{
-    "php",
-    "python3",
-    "node",
-    "go",
-    "npm",
-    "curl",
-    "gh",
-    "git",
-    "ffmpeg",
-    "tree",
-}
-
-var installableTools = []string{
-    "php",
-    "python3",
-    "node",
-    "go",
-    "curl",
-    "git",
-    "ffmpeg",
-    "tree",
-    "gh",
-}
-
 var (
-    executableLookup = exec.LookPath
-    commandRunner   = func(name string, args ...string) ([]byte, error) {
-        return exec.Command(name, args...).CombinedOutput()
-    }
+	executableLookup = exec.LookPath
+	commandRunner   = func(name string, args ...string) ([]byte, error) {
+		return exec.Command(name, args...).CombinedOutput()
+	}
     commandRunnerWithOutput = func(out io.Writer, name string, args ...string) error {
         cmd := exec.Command(name, args...)
         cmd.Stdout = out
@@ -48,39 +23,13 @@ var (
 
     versionPatterns = []*regexp.Regexp{
         regexp.MustCompile(`\d+\.\d+\.\d+`),
-        regexp.MustCompile(`\d+\.\d+`),
-    }
+		regexp.MustCompile(`\d+\.\d+`),
+	}
 )
 
-var toolVersionCommands = map[string][]string{
-    "php":     {"--version"},
-    "python3": {"--version"},
-    "node":    {"--version"},
-    "go":      {"version"},
-    "npm":     {"--version"},
-    "curl":    {"--version"},
-    "gh":      {"--version"},
-    "git":     {"--version"},
-    "tree":    {"--version"},
-    "ffmpeg":  {"-version"},
-}
-
-var toolDisplayNames = map[string]string{
-    "php":     "php",
-    "python3": "python3",
-    "node":    "node",
-    "go":      "go",
-    "npm":     "npm",
-    "curl":    "curl",
-    "gh":      "gh",
-    "git":     "git",
-    "ffmpeg":  "ffmpeg",
-    "tree":    "tree",
-}
-
 func IsCommandAvailable(name string) bool {
-    _, err := CommandPath(name)
-    return err == nil
+	_, err := CommandPath(name)
+	return err == nil
 }
 
 func ToolInstallState(name string) (installed bool, commandPath string, installedByHomebrew bool, err error) {
@@ -130,19 +79,14 @@ func resolvedBrewBinaryPath(name, formula string) (string, error) {
 }
 
 func ToolDisplayName(name string) string {
-    if display, ok := toolDisplayNames[name]; ok {
-        return display
-    }
-    return name
+	if display, ok := toolDisplayName(name); ok {
+		return display
+	}
+	return name
 }
 
 func IsInstallableTool(name string) bool {
-    for _, item := range installableTools {
-        if item == name {
-            return true
-        }
-    }
-    return false
+	return managedToolIsInstallable(name)
 }
 
 func SupportedTools() []string {
@@ -192,10 +136,10 @@ func ToolVersionForOutdated(name string) (string, error) {
 }
 
 func toolVersionFromCommand(name string) (string, error) {
-    cmdArgs, ok := toolVersionCommands[name]
-    if !ok {
-        return "", fmt.Errorf("unsupported tool: %s", name)
-    }
+	cmdArgs, ok := versionArgsForTool(name)
+	if !ok {
+		return "", fmt.Errorf("unsupported tool: %s", name)
+	}
 
     output, err := commandRunner(name, cmdArgs...)
     if err != nil {
@@ -206,10 +150,10 @@ func toolVersionFromCommand(name string) (string, error) {
 }
 
 func toolVersionFromCommandPath(commandPath, name string) (string, error) {
-    cmdArgs, ok := toolVersionCommands[name]
-    if !ok {
-        return "", fmt.Errorf("unsupported tool: %s", name)
-    }
+	cmdArgs, ok := versionArgsForTool(name)
+	if !ok {
+		return "", fmt.Errorf("unsupported tool: %s", name)
+	}
 
     output, err := commandRunner(commandPath, cmdArgs...)
     if err != nil {
@@ -343,334 +287,164 @@ func IsBrewFormulaInstalled(formula string) (bool, error) {
 }
 
 func InstallNode() error {
-    if !IsBrewInstalled() {
-        return fmt.Errorf("homebrew is not installed")
-    }
-
-    if IsCommandAvailable("node") || IsCommandAvailable("npm") {
-        return fmt.Errorf("node is already installed")
-    }
-
-    if _, err := commandRunner("brew", "install", "node"); err != nil {
-        return fmt.Errorf("brew install node failed: %w", err)
-    }
-
-    return nil
+    return installToolWithoutOutput("node", false)
 }
 
 func InstallNodeWithOutput(out io.Writer, force bool) error {
-    if !IsBrewInstalled() {
-        return fmt.Errorf("homebrew is not installed")
-    }
-
-    if !force && (IsCommandAvailable("node") || IsCommandAvailable("npm")) {
-        return fmt.Errorf("node is already installed")
-    }
-
-    if err := commandRunnerWithOutput(out, "brew", "install", "node"); err != nil {
-        return fmt.Errorf("brew install node failed: %w", err)
-    }
-
-    return nil
+    return installToolWithOutput("node", force, out)
 }
 
 func InstallPHP() error {
-    if !IsBrewInstalled() {
-        return fmt.Errorf("homebrew is not installed")
-    }
-
-    if IsCommandAvailable("php") {
-        return fmt.Errorf("php is already installed")
-    }
-
-    if _, err := commandRunner("brew", "install", "php"); err != nil {
-        return fmt.Errorf("brew install php failed: %w", err)
-    }
-
-    return nil
+    return installToolWithoutOutput("php", false)
 }
 
 func InstallPHPWithOutput(out io.Writer, force bool) error {
-    if !IsBrewInstalled() {
-        return fmt.Errorf("homebrew is not installed")
-    }
-
-    if !force && IsCommandAvailable("php") {
-        return fmt.Errorf("php is already installed")
-    }
-
-    if err := commandRunnerWithOutput(out, "brew", "install", "php"); err != nil {
-        return fmt.Errorf("brew install php failed: %w", err)
-    }
-
-    return nil
+    return installToolWithOutput("php", force, out)
 }
 
 func InstallPython3() error {
-    if !IsBrewInstalled() {
-        return fmt.Errorf("homebrew is not installed")
-    }
-
-    installed, err := IsBrewFormulaInstalled("python3")
-    if err != nil {
-        return fmt.Errorf("check python3 install status failed: %w", err)
-    }
-    if installed {
-        return fmt.Errorf("python3 is already installed by homebrew")
-    }
-
-    if _, err := commandRunner("brew", "install", "python3"); err != nil {
-        return fmt.Errorf("brew install python3 failed: %w", err)
-    }
-
-    return nil
+    return installToolWithoutOutput("python3", false)
 }
 
 func InstallPython3WithOutput(out io.Writer, force bool) error {
-    if !IsBrewInstalled() {
-        return fmt.Errorf("homebrew is not installed")
-    }
-
-    if !force {
-        installed, err := IsBrewFormulaInstalled("python3")
-        if err != nil {
-            return fmt.Errorf("check python3 install status failed: %w", err)
-        }
-        if installed {
-            return fmt.Errorf("python3 is already installed by homebrew")
-        }
-    }
-
-    if err := commandRunnerWithOutput(out, "brew", "install", "python3"); err != nil {
-        return fmt.Errorf("brew install python3 failed: %w", err)
-    }
-
-    return nil
+    return installToolWithOutput("python3", force, out)
 }
 
 func InstallGo() error {
-    if !IsBrewInstalled() {
-        return fmt.Errorf("homebrew is not installed")
-    }
-
-    if IsCommandAvailable("go") {
-        return fmt.Errorf("go is already installed")
-    }
-
-    if _, err := commandRunner("brew", "install", "go"); err != nil {
-        return fmt.Errorf("brew install go failed: %w", err)
-    }
-
-    return nil
+    return installToolWithoutOutput("go", false)
 }
 
 func InstallGoWithOutput(out io.Writer, force bool) error {
-    if !IsBrewInstalled() {
-        return fmt.Errorf("homebrew is not installed")
-    }
-
-    if !force && IsCommandAvailable("go") {
-        return fmt.Errorf("go is already installed")
-    }
-
-    if err := commandRunnerWithOutput(out, "brew", "install", "go"); err != nil {
-        return fmt.Errorf("brew install go failed: %w", err)
-    }
-
-    return nil
-}
-
-func InstallTool(name string) error {
-    switch name {
-    case "node":
-        return InstallNode()
-    case "php":
-        return InstallPHP()
-    case "python3":
-        return InstallPython3()
-    case "go":
-        return InstallGo()
-    case "curl":
-        return InstallCurl()
-    case "git":
-        return InstallGit()
-    case "ffmpeg":
-        return InstallFFmpeg()
-    case "tree":
-        return InstallTree()
-    case "gh":
-        return InstallGH()
-    default:
-        return fmt.Errorf("unsupported tool: %s", name)
-    }
+    return installToolWithOutput("go", force, out)
 }
 
 func InstallCurl() error {
-    if !IsBrewInstalled() {
-        return fmt.Errorf("homebrew is not installed")
-    }
-
-    if IsCommandAvailable("curl") {
-        return fmt.Errorf("curl is already installed")
-    }
-
-    if _, err := commandRunner("brew", "install", "curl"); err != nil {
-        return fmt.Errorf("brew install curl failed: %w", err)
-    }
-
-    if _, err := commandRunner("brew", "link", "curl", "--force"); err != nil {
-        return fmt.Errorf("brew link curl failed: %w", err)
-    }
-
-    return nil
+    return installToolWithoutOutput("curl", false)
 }
 
 func InstallCurlWithOutput(out io.Writer, force bool) error {
-    if !IsBrewInstalled() {
-        return fmt.Errorf("homebrew is not installed")
-    }
-
-    if !force && IsCommandAvailable("curl") {
-        return fmt.Errorf("curl is already installed")
-    }
-
-    if err := commandRunnerWithOutput(out, "brew", "install", "curl"); err != nil {
-        return fmt.Errorf("brew install curl failed: %w", err)
-    }
-
-    if err := commandRunnerWithOutput(out, "brew", "link", "curl", "--force"); err != nil {
-        return fmt.Errorf("brew link curl failed: %w", err)
-    }
-
-    return nil
+    return installToolWithOutput("curl", force, out)
 }
 
 func InstallGit() error {
-    if !IsBrewInstalled() {
-        return fmt.Errorf("homebrew is not installed")
-    }
-
-    if IsCommandAvailable("git") {
-        return fmt.Errorf("git is already installed")
-    }
-
-    if _, err := commandRunner("brew", "install", "git"); err != nil {
-        return fmt.Errorf("brew install git failed: %w", err)
-    }
-
-    return nil
+    return installToolWithoutOutput("git", false)
 }
 
 func InstallGitWithOutput(out io.Writer, force bool) error {
-    if !IsBrewInstalled() {
-        return fmt.Errorf("homebrew is not installed")
-    }
-
-    if !force && IsCommandAvailable("git") {
-        return fmt.Errorf("git is already installed")
-    }
-
-    if err := commandRunnerWithOutput(out, "brew", "install", "git"); err != nil {
-        return fmt.Errorf("brew install git failed: %w", err)
-    }
-
-    return nil
+    return installToolWithOutput("git", force, out)
 }
 
 func InstallFFmpeg() error {
-    if !IsBrewInstalled() {
-        return fmt.Errorf("homebrew is not installed")
-    }
-
-    if IsCommandAvailable("ffmpeg") {
-        return fmt.Errorf("ffmpeg is already installed")
-    }
-
-    if _, err := commandRunner("brew", "install", "ffmpeg"); err != nil {
-        return fmt.Errorf("brew install ffmpeg failed: %w", err)
-    }
-
-    return nil
+    return installToolWithoutOutput("ffmpeg", false)
 }
 
 func InstallFFmpegWithOutput(out io.Writer, force bool) error {
-    if !IsBrewInstalled() {
-        return fmt.Errorf("homebrew is not installed")
-    }
-
-    if !force && IsCommandAvailable("ffmpeg") {
-        return fmt.Errorf("ffmpeg is already installed")
-    }
-
-    if err := commandRunnerWithOutput(out, "brew", "install", "ffmpeg"); err != nil {
-        return fmt.Errorf("brew install ffmpeg failed: %w", err)
-    }
-
-    return nil
+    return installToolWithOutput("ffmpeg", force, out)
 }
 
 func InstallTree() error {
-    if !IsBrewInstalled() {
-        return fmt.Errorf("homebrew is not installed")
-    }
-
-    if IsCommandAvailable("tree") {
-        return fmt.Errorf("tree is already installed")
-    }
-
-    if _, err := commandRunner("brew", "install", "tree"); err != nil {
-        return fmt.Errorf("brew install tree failed: %w", err)
-    }
-
-    return nil
+    return installToolWithoutOutput("tree", false)
 }
 
 func InstallTreeWithOutput(out io.Writer, force bool) error {
-    if !IsBrewInstalled() {
-        return fmt.Errorf("homebrew is not installed")
-    }
-
-    if !force && IsCommandAvailable("tree") {
-        return fmt.Errorf("tree is already installed")
-    }
-
-    if err := commandRunnerWithOutput(out, "brew", "install", "tree"); err != nil {
-        return fmt.Errorf("brew install tree failed: %w", err)
-    }
-
-    return nil
+    return installToolWithOutput("tree", force, out)
 }
 
 func InstallGH() error {
+    return installToolWithoutOutput("gh", false)
+}
+
+func InstallGHWithOutput(out io.Writer, force bool) error {
+    return installToolWithOutput("gh", force, out)
+}
+
+func InstallTool(name string) error {
+    if !managedToolIsInstallable(name) {
+        return fmt.Errorf("unsupported tool: %s", name)
+    }
+    return installToolWithoutOutput(name, false)
+}
+
+func buildInstallPlan(toolName string, force bool, checkCommand bool, checkFormula bool) ([]string, error) {
     if !IsBrewInstalled() {
-        return fmt.Errorf("homebrew is not installed")
+        return nil, fmt.Errorf("homebrew is not installed")
     }
 
-    if IsCommandAvailable("gh") {
-        return fmt.Errorf("gh is already installed")
+    if !force && checkCommand && isToolPresent(toolName) {
+        return nil, nil
     }
 
-    if _, err := commandRunner("brew", "install", "gh"); err != nil {
-        return fmt.Errorf("brew install gh failed: %w", err)
+    if !force && checkFormula {
+        installedByFormula, err := IsBrewFormulaInstalled(toolName)
+        if err != nil {
+            return nil, fmt.Errorf("check %s install status failed: %w", toolName, err)
+        }
+        if installedByFormula {
+            return nil, nil
+        }
+    }
+
+    operations, ok := installOperationSequence(toolName)
+    if !ok {
+        return nil, fmt.Errorf("unsupported tool: %s", toolName)
+    }
+
+	return operations, nil
+}
+
+func isToolPresent(name string) bool {
+	if name == "node" {
+		return IsCommandAvailable("node") || IsCommandAvailable("npm")
+	}
+	return IsCommandAvailable(name)
+}
+
+func installToolWithoutOutput(name string, force bool) error {
+    return installTool(name, force, nil, false)
+}
+
+func installToolWithOutput(name string, force bool, out io.Writer) error {
+    return installTool(name, force, out, true)
+}
+
+func installTool(name string, force bool, out io.Writer, withOutput bool) error {
+    spec, ok := managedToolFor(name)
+    if !ok || !spec.installable {
+        return fmt.Errorf("unsupported tool: %s", name)
+    }
+
+    operations, err := buildInstallPlan(name, force, spec.runCheckCommand, spec.runCheckFormula)
+    if err != nil {
+        return err
+    }
+
+    if len(operations) == 0 {
+        return fmt.Errorf(spec.alreadyInstalledLabel)
+    }
+
+    for _, operation := range operations {
+        if withOutput {
+            if err := runInstallOperation(out, operation); err != nil {
+                return fmt.Errorf("%s failed: %w", operation, err)
+            }
+            continue
+        }
+
+        if err := runInstallOperationCommand(operation); err != nil {
+            return fmt.Errorf("%s failed: %w", operation, err)
+        }
     }
 
     return nil
 }
 
-func InstallGHWithOutput(out io.Writer, force bool) error {
-    if !IsBrewInstalled() {
-        return fmt.Errorf("homebrew is not installed")
+func runInstallOperationCommand(op string) error {
+    args := strings.Fields(op)
+    if len(args) == 0 {
+        return nil
     }
-
-    if !force && IsCommandAvailable("gh") {
-        return fmt.Errorf("gh is already installed")
-    }
-
-    if err := commandRunnerWithOutput(out, "brew", "install", "gh"); err != nil {
-        return fmt.Errorf("brew install gh failed: %w", err)
-    }
-
-    return nil
+    _, err := commandRunner(args[0], args[1:]...)
+    return err
 }
 
 func UpdateToolWithOutput(out io.Writer, name string) error {
@@ -691,7 +465,7 @@ func UpdateToolWithOutput(out io.Writer, name string) error {
 
     if !IsBrewInstalled() {
         return fmt.Errorf("homebrew is not installed")
-   }
+    }
 
     formula, ok := brewFormulaForTool(name)
     if !ok {

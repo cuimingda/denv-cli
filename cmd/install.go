@@ -74,130 +74,48 @@ func buildInstallOperations(force bool) ([]string, error) {
 }
 
 func buildInstallOperationsForTool(toolName string, force bool) ([]string, error) {
-	switch toolName {
-	case "node":
-		return buildNodeInstallOperations(force)
-	case "php":
-		return buildPHPInstallOperations(force)
-	case "python3":
-		return buildPython3InstallOperations(force)
-	case "go":
-		return buildGoInstallOperations(force)
-	case "curl":
-		return buildCurlInstallOperations(force)
-	case "git":
-		return buildGitInstallOperations(force)
-	case "ffmpeg":
-		return buildFFmpegInstallOperations(force)
-	case "tree":
-		return buildTreeInstallOperations(force)
-	case "gh":
-		return buildGHInstallOperations(force)
-	default:
+	tool, ok := managedToolFor(toolName)
+	if !ok || !tool.installable {
 		return nil, fmt.Errorf("unsupported tool: %s", toolName)
 	}
+
+	return buildInstallPlan(toolName, force, tool.planCheckCommand, tool.planCheckFormula)
 }
 
 func buildNodeInstallOperations(force bool) ([]string, error) {
-	if !IsBrewInstalled() {
-		return nil, fmt.Errorf("homebrew is not installed")
-	}
-	if !force && (IsCommandAvailable("node") || IsCommandAvailable("npm")) {
-		return nil, nil
-	}
-	return []string{"brew install node"}, nil
+	return buildInstallPlan("node", force, true, false)
 }
 
 func buildPHPInstallOperations(force bool) ([]string, error) {
-	if !IsBrewInstalled() {
-		return nil, fmt.Errorf("homebrew is not installed")
-	}
-	if !force && IsCommandAvailable("php") {
-		return nil, nil
-	}
-	return []string{"brew install php"}, nil
+	return buildInstallPlan("php", force, true, false)
 }
 
 func buildPython3InstallOperations(force bool) ([]string, error) {
-	if !IsBrewInstalled() {
-		return nil, fmt.Errorf("homebrew is not installed")
-	}
-
-	if !force && IsCommandAvailable("python3") {
-		return nil, nil
-	}
-
-	if !force {
-		installed, err := IsBrewFormulaInstalled("python3")
-		if err != nil {
-			return nil, fmt.Errorf("check python3 install status failed: %w", err)
-		}
-		if installed {
-			return nil, nil
-		}
-	}
-
-	return []string{"brew install python3"}, nil
+	return buildInstallPlan("python3", force, true, true)
 }
 
 func buildGoInstallOperations(force bool) ([]string, error) {
-	if !IsBrewInstalled() {
-		return nil, fmt.Errorf("homebrew is not installed")
-	}
-	if !force && IsCommandAvailable("go") {
-		return nil, nil
-	}
-	return []string{"brew install go"}, nil
+	return buildInstallPlan("go", force, true, false)
 }
 
 func buildCurlInstallOperations(force bool) ([]string, error) {
-	if !IsBrewInstalled() {
-		return nil, fmt.Errorf("homebrew is not installed")
-	}
-	if !force && IsCommandAvailable("curl") {
-		return nil, nil
-	}
-	return []string{"brew install curl", "brew link curl --force"}, nil
+	return buildInstallPlan("curl", force, true, false)
 }
 
 func buildGitInstallOperations(force bool) ([]string, error) {
-	if !IsBrewInstalled() {
-		return nil, fmt.Errorf("homebrew is not installed")
-	}
-	if !force && IsCommandAvailable("git") {
-		return nil, nil
-	}
-	return []string{"brew install git"}, nil
+	return buildInstallPlan("git", force, true, false)
 }
 
 func buildFFmpegInstallOperations(force bool) ([]string, error) {
-	if !IsBrewInstalled() {
-		return nil, fmt.Errorf("homebrew is not installed")
-	}
-	if !force && IsCommandAvailable("ffmpeg") {
-		return nil, nil
-	}
-	return []string{"brew install ffmpeg"}, nil
+	return buildInstallPlan("ffmpeg", force, true, false)
 }
 
 func buildTreeInstallOperations(force bool) ([]string, error) {
-	if !IsBrewInstalled() {
-		return nil, fmt.Errorf("homebrew is not installed")
-	}
-	if !force && IsCommandAvailable("tree") {
-		return nil, nil
-	}
-	return []string{"brew install tree"}, nil
+	return buildInstallPlan("tree", force, true, false)
 }
 
 func buildGHInstallOperations(force bool) ([]string, error) {
-	if !IsBrewInstalled() {
-		return nil, fmt.Errorf("homebrew is not installed")
-	}
-	if !force && IsCommandAvailable("gh") {
-		return nil, nil
-	}
-	return []string{"brew install gh"}, nil
+	return buildInstallPlan("gh", force, true, false)
 }
 
 func runInstallOperation(out io.Writer, op string) error {
