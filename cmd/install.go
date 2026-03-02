@@ -14,7 +14,7 @@ func NewInstallCmd() *cobra.Command {
         RunE: func(cmd *cobra.Command, args []string) error {
             toolName := args[0]
 
-            if !IsSupportedTool(toolName) {
+            if !IsInstallableTool(toolName) {
                 return fmt.Errorf("unsupported tool: %s", toolName)
             }
 

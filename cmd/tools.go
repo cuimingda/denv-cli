@@ -7,7 +7,15 @@ import (
     "strings"
 )
 
-var supportedTools = []string{
+var listedTools = []string{
+    "php",
+    "python3",
+    "node",
+    "go",
+    "npm",
+}
+
+var installableTools = []string{
     "php",
     "python3",
     "node",
@@ -31,6 +39,7 @@ var toolVersionCommands = map[string][]string{
     "python3": {"--version"},
     "node":    {"--version"},
     "go":      {"version"},
+    "npm":     {"--version"},
 }
 
 var toolDisplayNames = map[string]string{
@@ -38,6 +47,7 @@ var toolDisplayNames = map[string]string{
     "python3": "python3",
     "node":    "node",
     "go":      "Go",
+    "npm":     "npm",
 }
 
 func IsCommandAvailable(name string) bool {
@@ -52,8 +62,8 @@ func ToolDisplayName(name string) string {
     return name
 }
 
-func IsSupportedTool(name string) bool {
-    for _, item := range supportedTools {
+func IsInstallableTool(name string) bool {
+    for _, item := range installableTools {
         if item == name {
             return true
         }
@@ -62,8 +72,14 @@ func IsSupportedTool(name string) bool {
 }
 
 func SupportedTools() []string {
-    out := make([]string, len(supportedTools))
-    copy(out, supportedTools)
+    out := make([]string, len(listedTools))
+    copy(out, listedTools)
+    return out
+}
+
+func InstallableTools() []string {
+    out := make([]string, len(installableTools))
+    copy(out, installableTools)
     return out
 }
 

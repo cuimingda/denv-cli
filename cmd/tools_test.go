@@ -43,7 +43,7 @@ func TestNewListCmdShowsVersionsAndMissingTools(t *testing.T) {
     }
 
     got := strings.TrimSpace(out.String())
-    want := "php 8.3.4 (/usr/bin/php)\npython3 3.12.4 (/usr/bin/python3)\nnode not found\nGo 1.23.4 (/usr/bin/go)"
+    want := "php 8.3.4 (/usr/bin/php)\npython3 3.12.4 (/usr/bin/python3)\nnode not found\nGo 1.23.4 (/usr/bin/go)\nnpm not found"
     if got != want {
         t.Fatalf("unexpected list output:\nwant:\n%q\ngot:\n%q", want, got)
     }
@@ -59,12 +59,16 @@ func TestExtractVersion(t *testing.T) {
     }
 }
 
-func TestIsSupportedTool(t *testing.T) {
-    if !IsSupportedTool("php") {
-        t.Fatal("expected php to be supported")
+func TestIsInstallableTool(t *testing.T) {
+    if !IsInstallableTool("php") {
+        t.Fatal("expected php to be installable")
     }
 
-    if IsSupportedTool("ruby") {
+    if IsInstallableTool("npm") {
+        t.Fatal("expected npm to be not installable")
+    }
+
+    if IsInstallableTool("ruby") {
         t.Fatal("expected ruby to be unsupported")
     }
 }
