@@ -8,6 +8,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/cuimingda/denv-cli/internal/denv"
 	"github.com/spf13/cobra"
 )
 
@@ -33,58 +34,11 @@ func NewOutdatedCmdWithService(svc CommandService) *cobra.Command {
 			out := cmd.OutOrStdout()
 			colorOutput := useColorOutput(out) && mode != listOutputNoColor
 			start := time.Now()
-			supported := svc.SupportedTools()
-			doingf(cmd, "check outdated status for %d tools", len(supported))
+			doingf(cmd, "check outdated status for %d tools", len(svc.SupportedTools()))
 
-			rows := make([]outdatedItem, 0, len(supported))
-			for _, name := range supported {
-				doingf(cmd, "checking %s", name)
-				row := outdatedItem{
-					Name:        name,
-					DisplayName: svc.ToolDisplayName(name),
-				}
-
-				installed, _, _, err := svc.ToolInstallState(name)
-				if err != nil {
-					return err
-				}
-
-				if !installed {
-					row.Current = "<not installed>"
-					latest, latestErr := svc.ToolLatestVersion(name)
-					if latestErr != nil {
-						row.State = "invalid_latest"
-					} else {
-						row.State = "not_installed"
-						row.Latest = latest
-					}
-					rows = append(rows, row)
-					continue
-				}
-
-				current, currentErr := svc.ToolVersionForOutdated(name)
-				if currentErr != nil {
-					row.State = "invalid_current"
-					rows = append(rows, row)
-					continue
-				}
-
-				latest, latestErr := svc.ToolLatestVersion(name)
-				if latestErr != nil {
-					row.State = "invalid_latest"
-					rows = append(rows, row)
-					continue
-				}
-
-				row.Current = current
-				row.Latest = latest
-				if svc.CompareVersions(current, latest) < 0 {
-					row.State = "outdated"
-				} else {
-					row.State = "up_to_date"
-				}
-
-				rows = append(rows, row)
+			rows, err := svc.OutdatedItems()
+			if err != nil {
+				return err
 			}
 			doingf(cmd, "outdated check completed in %s", time.Since(start))
 
@@ -105,15 +59,7 @@ func NewOutdatedCmdWithService(svc CommandService) *cobra.Command {
 	return cmd
 }
 
-type outdatedItem struct {
-	Name        string
-	DisplayName string
-	Current     string
-	Latest      string
-	State       string
-}
-
-func renderOutdatedPlain(out io.Writer, rows []outdatedItem, useColor bool) error {
+func renderOutdatedPlain(out io.Writer, rows []denv.OutdatedItem, useColor bool) error {
 	for _, row := range rows {
 		line := renderOutdatedLine(row, useColor)
 		if _, err := fmt.Fprintln(out, line); err != nil {
@@ -123,21 +69,21 @@ func renderOutdatedPlain(out io.Writer, rows []outdatedItem, useColor bool) erro
 	return nil
 }
 
-func renderOutdatedLine(row outdatedItem, useColor bool) string {
+func renderOutdatedLine(row denv.OutdatedItem, useColor bool) string {
 	switch row.State {
-	case "invalid_latest":
+	case denv.OutdatedStateInvalidLatest:
 		return row.DisplayName + " invalid latest version"
-	case "invalid_current":
+	case denv.OutdatedStateInvalidCurrent:
 		return row.DisplayName + " invalid current version"
-	case "not_installed":
+	case denv.OutdatedStateNotInstalled:
 		return row.DisplayName + " <not installed> " + row.Latest
-	case "up_to_date":
+	case denv.OutdatedStateUpToDate:
 		current := row.Current
 		if useColor {
 			current = colorize(colorGreen, current)
 		}
 		return row.DisplayName + " " + current
-	case "outdated":
+	case denv.OutdatedStateOutdated:
 		current := row.Current
 		if useColor {
 			current = colorize(colorRed, current)
@@ -148,7 +94,7 @@ func renderOutdatedLine(row outdatedItem, useColor bool) string {
 	}
 }
 
-func renderOutdatedJSON(out io.Writer, rows []outdatedItem) error {
+func renderOutdatedJSON(out io.Writer, rows []denv.OutdatedItem) error {
 	payload := make([]map[string]any, 0, len(rows))
 	for _, row := range rows {
 		record := map[string]any{
@@ -172,7 +118,7 @@ func renderOutdatedJSON(out io.Writer, rows []outdatedItem) error {
 	return err
 }
 
-func renderOutdatedTable(out io.Writer, rows []outdatedItem) error {
+func renderOutdatedTable(out io.Writer, rows []denv.OutdatedItem) error {
 	tw := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
 	if _, err := fmt.Fprintln(tw, "NAME\tCURRENT\tLATEST\tSTATE"); err != nil {
 		return err
@@ -192,13 +138,4 @@ func renderOutdatedTable(out io.Writer, rows []outdatedItem) error {
 		}
 	}
 	return tw.Flush()
-}
-
-func isValidOutputMode(mode listOutputMode) bool {
-	switch mode {
-	case listOutputPlain, listOutputJSON, listOutputTable, listOutputNoColor:
-		return true
-	default:
-		return false
-	}
 }

@@ -37,6 +37,8 @@ type ToolService interface {
 	IsBrewInstalled() bool
 	IsBrewFormulaInstalled(formula string) (bool, error)
 	ResolvedBrewBinaryPath(name, formula string) (string, error)
+	OutdatedItems() ([]denv.OutdatedItem, error)
+	ListToolItems(opts denv.ListOptions) ([]denv.ToolListItem, error)
 }
 
 type OperationService interface {
@@ -72,6 +74,8 @@ type OperationService interface {
 	InstallFFmpeg() error
 	InstallTree() error
 	InstallGH() error
+	OutdatedUpdatePlan() ([]denv.OutdatedItem, error)
+	ExecuteInstallOperations(out io.Writer, operations []denv.InstallOperation) error
 }
 
 type CommandService interface {

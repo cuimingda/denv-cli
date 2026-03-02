@@ -58,13 +58,8 @@ Supported tools:
 			}
 
 			doingf(cmd, "start executing %d install operations", len(operations))
-			for idx, operation := range operations {
-				doingf(cmd, "start: %s", operation.String())
-				start := time.Now()
-				if err := svc.RunInstallOperation(cmd.OutOrStdout(), operation); err != nil {
-					return err
-				}
-				verbosef(cmd, "operation %d/%d completed in %s", idx+1, len(operations), time.Since(start))
+			if err := svc.ExecuteInstallOperations(cmd.OutOrStdout(), operations); err != nil {
+				return err
 			}
 
 			verbosef(cmd, "install completed in %s", time.Since(operationStart))

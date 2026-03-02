@@ -9,6 +9,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/cuimingda/denv-cli/internal/denv"
 	"github.com/spf13/cobra"
 )
 
@@ -54,39 +55,12 @@ func NewListCmdWithService(svc ToolService) *cobra.Command {
 
 			start := time.Now()
 			doingf(cmd, "scan supported tools...")
-			items := make([]listItem, 0, len(svc.SupportedTools()))
-			for _, name := range svc.SupportedTools() {
-				doingf(cmd, "checking %s", name)
-				item := listItem{
-					Name:          name,
-					DisplayName:   svc.ToolDisplayName(name),
-					ManagedByBrew: false,
-					Installed:     false,
-					Version:       "",
-					Path:          "",
-				}
-
-				installed, path, _, stateErr := svc.ToolInstallState(name)
-				if stateErr != nil {
-					return stateErr
-				}
-				if installed {
-					item.Installed = true
-					item.Path = path
-					item.ManagedByBrew = svc.IsManagedByHomebrew(path)
-				}
-
-				if showVersion && installed {
-					if toolVersion, err := svc.ToolVersionWithPath(name, path); err == nil {
-						item.Version = toolVersion
-					} else {
-						item.Installed = false
-						item.ManagedByBrew = false
-						item.Path = ""
-					}
-				}
-
-				items = append(items, item)
+			items, err := svc.ListToolItems(denv.ListOptions{
+				ShowVersion: showVersion,
+				ShowPath:    showPath,
+			})
+			if err != nil {
+				return err
 			}
 			doingf(cmd, "list scan completed in %s", time.Since(start))
 
@@ -110,15 +84,6 @@ type listRenderOptions struct {
 	showPath    bool
 }
 
-type listItem struct {
-	Name          string
-	DisplayName   string
-	Installed     bool
-	Version       string
-	Path          string
-	ManagedByBrew bool
-}
-
 func parseListOutput(raw string) (listOutputMode, error) {
 	mode := listOutputMode(raw)
 	switch mode {
@@ -128,7 +93,7 @@ func parseListOutput(raw string) (listOutputMode, error) {
 	return "", fmt.Errorf("invalid output: %s", raw)
 }
 
-func renderList(out io.Writer, mode listOutputMode, opts listRenderOptions, items []listItem) error {
+func renderList(out io.Writer, mode listOutputMode, opts listRenderOptions, items []denv.ToolListItem) error {
 	switch mode {
 	case listOutputJSON:
 		payload := make([]map[string]any, 0, len(items))
@@ -160,7 +125,7 @@ func renderList(out io.Writer, mode listOutputMode, opts listRenderOptions, item
 	}
 }
 
-func renderListPlain(out io.Writer, opts listRenderOptions, items []listItem) error {
+func renderListPlain(out io.Writer, opts listRenderOptions, items []denv.ToolListItem) error {
 	for _, item := range items {
 		name := item.DisplayName
 		if opts.colorOutput {
@@ -191,7 +156,7 @@ func renderListPlain(out io.Writer, opts listRenderOptions, items []listItem) er
 	return nil
 }
 
-func itemLineSuffix(item listItem, opts listRenderOptions) string {
+func itemLineSuffix(item denv.ToolListItem, opts listRenderOptions) string {
 	suffixParts := make([]string, 0, 2)
 	if opts.showVersion {
 		if item.Installed {
@@ -222,7 +187,7 @@ func itemLineSuffix(item listItem, opts listRenderOptions) string {
 	return strings.Join(suffixParts, " ")
 }
 
-func renderListTable(out io.Writer, opts listRenderOptions, items []listItem) error {
+func renderListTable(out io.Writer, opts listRenderOptions, items []denv.ToolListItem) error {
 	header := "TOOL\t"
 	if opts.showVersion {
 		header += "VERSION\t"

@@ -21,44 +21,20 @@ func NewUpdateCmdWithService(svc CommandService) *cobra.Command {
 		Short: "Update outdated supported developer tools to latest versions",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			start := time.Now()
-			supportedTools := svc.SupportedTools()
-			doingf(cmd, "scan %d tools for updates", len(supportedTools))
+			doingf(cmd, "scan %d tools for updates", len(svc.SupportedTools()))
 			updated := false
-			for idx, name := range supportedTools {
-				doingf(cmd, "check %d/%d: %s", idx+1, len(supportedTools), name)
-				installed, _, _, err := svc.ToolInstallState(name)
-				if err != nil {
+			candidates, err := svc.OutdatedUpdatePlan()
+			if err != nil {
+				return err
+			}
+			for _, item := range candidates {
+				doingf(cmd, "updating %s", item.Name)
+				updateStart := time.Now()
+				if err := svc.UpdateToolWithOutput(cmd.OutOrStdout(), item.Name); err != nil {
 					return err
 				}
-				if !installed {
-					verbosef(cmd, "%s is not installed, skip", name)
-					continue
-				}
-
-				current, err := svc.ToolVersionForOutdated(name)
-				if err != nil {
-					verbosef(cmd, "read current version for %s failed: %v", name, err)
-					return err
-				}
-
-				latest, err := svc.ToolLatestVersion(name)
-				if err != nil {
-					verbosef(cmd, "read latest version for %s failed: %v", name, err)
-					return err
-				}
-
-				if svc.CompareVersions(current, latest) < 0 {
-					doingf(cmd, "updating %s", name)
-					verbosef(cmd, "%s outdated: current=%s latest=%s", name, current, latest)
-					updateStart := time.Now()
-					if err := svc.UpdateToolWithOutput(cmd.OutOrStdout(), name); err != nil {
-						return err
-					}
-					verbosef(cmd, "%s update completed in %s", name, time.Since(updateStart))
-					updated = true
-				} else {
-					verbosef(cmd, "%s is up to date: current=%s latest=%s", name, current, latest)
-				}
+				verbosef(cmd, "%s update completed in %s", item.Name, time.Since(updateStart))
+				updated = true
 			}
 
 			if !updated {
@@ -68,7 +44,7 @@ func NewUpdateCmdWithService(svc CommandService) *cobra.Command {
 			}
 
 			verbosef(cmd, "update completed in %s", time.Since(start))
-			_, err := fmt.Fprintln(cmd.OutOrStdout(), "done")
+			_, err = fmt.Fprintln(cmd.OutOrStdout(), "done")
 			return err
 		},
 	}
