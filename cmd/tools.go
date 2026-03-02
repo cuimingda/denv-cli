@@ -46,7 +46,7 @@ var toolDisplayNames = map[string]string{
     "php":     "php",
     "python3": "python3",
     "node":    "node",
-    "go":      "Go",
+    "go":      "go",
     "npm":     "npm",
 }
 
