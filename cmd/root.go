@@ -28,6 +28,7 @@ func NewRootCmdWithContext(ctx *CLIContext) *cobra.Command {
 	rootCmd.AddCommand(NewInstallCmdWithService(ctx.Service))
 	rootCmd.AddCommand(NewOutdatedCmdWithService(ctx.Service))
 	rootCmd.AddCommand(NewUpdateCmdWithService(ctx.Service))
+	rootCmd.PersistentFlags().Bool("verbose", false, "enable verbose output")
 
 	return rootCmd
 }

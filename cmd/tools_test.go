@@ -358,9 +358,9 @@ func TestIsInstallableTool(t *testing.T) {
 }
 
 func TestRootHasListCommand(t *testing.T) {
-    cmd := NewRootCmd()
-    found := false
-    installFound := false
+	cmd := NewRootCmd()
+	found := false
+	installFound := false
     outdatedFound := false
     updateFound := false
     for _, sub := range cmd.Commands() {
@@ -386,13 +386,59 @@ func TestRootHasListCommand(t *testing.T) {
     if !outdatedFound {
         t.Fatal("root command should include outdated subcommand")
     }
-    if !updateFound {
-        t.Fatal("root command should include update subcommand")
-    }
+	if !updateFound {
+		t.Fatal("root command should include update subcommand")
+	}
+}
+
+func TestRootHasVerboseFlag(t *testing.T) {
+	cmd := NewRootCmd()
+	if flag := cmd.PersistentFlags().Lookup("verbose"); flag == nil {
+		t.Fatal("root command should expose persistent verbose flag")
+	}
+}
+
+func TestRootVerboseRunsAndLogsInstallDryRun(t *testing.T) {
+	oldLookup := executableLookup
+	oldRunner := commandRunner
+	executableLookup = func(name string) (string, error) {
+		if name == "brew" {
+			return "/opt/homebrew/bin/" + name, nil
+		}
+		return "", exec.ErrNotFound
+	}
+	commandRunner = func(_ string, _ ...string) ([]byte, error) {
+		return nil, nil
+	}
+	defer func() {
+		executableLookup = oldLookup
+		commandRunner = oldRunner
+	}()
+
+	cmd := NewRootCmd()
+	out := &bytes.Buffer{}
+	cmd.SetOut(out)
+	cmd.SetErr(out)
+	cmd.SetArgs([]string{"--verbose", "install", "--dry-run"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("root verbose install dry-run failed: %v", err)
+	}
+
+	got := out.String()
+	if !strings.Contains(got, "[verbose] planned") {
+		t.Fatalf("expected verbose logs, got: %q", got)
+	}
+	if !strings.Contains(got, "[verbose] dry-run operation") {
+		t.Fatalf("expected dry-run verbose logs, got: %q", got)
+	}
+	if !strings.Contains(got, "Would run: brew install php") {
+		t.Fatalf("expected dry-run operations output, got: %q", got)
+	}
 }
 
 func TestUpdateCommandUpdatesOnlyOutdatedTools(t *testing.T) {
-    oldLookup := executableLookup
+	oldLookup := executableLookup
     oldRunner := commandRunner
     oldRunnerWithOutput := commandRunnerWithOutput
     executableLookup = func(name string) (string, error) {
