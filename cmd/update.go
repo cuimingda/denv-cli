@@ -7,14 +7,20 @@ import (
 )
 
 func NewUpdateCmd() *cobra.Command {
+	return NewUpdateCmdWithService(NewCLIContext().Service)
+}
+
+func NewUpdateCmdWithService(svc CommandService) *cobra.Command {
+	if svc == nil {
+		svc = NewCLIContext().Service
+	}
+
 	return &cobra.Command{
 		Use:   "update",
 		Short: "Update outdated supported developer tools to latest versions",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			svc := denvService()
-
 			updated := false
-			for _, name := range SupportedTools() {
+			for _, name := range svc.SupportedTools() {
 				installed, _, _, err := svc.ToolInstallState(name)
 				if err != nil {
 					return err
@@ -33,8 +39,8 @@ func NewUpdateCmd() *cobra.Command {
 					return err
 				}
 
-				if cmpVersions(current, latest) < 0 {
-					if err := UpdateToolWithOutput(cmd.OutOrStdout(), name); err != nil {
+				if svc.CompareVersions(current, latest) < 0 {
+					if err := svc.UpdateToolWithOutput(cmd.OutOrStdout(), name); err != nil {
 						return err
 					}
 					updated = true

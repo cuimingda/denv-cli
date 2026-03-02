@@ -2,12 +2,19 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/spf13/cobra"
 )
 
 func NewInstallCmd() *cobra.Command {
+	return NewInstallCmdWithService(NewCLIContext().Service)
+}
+
+func NewInstallCmdWithService(svc CommandService) *cobra.Command {
+	if svc == nil {
+		svc = NewCLIContext().Service
+	}
+
 	longHelp := `Install all supported developer tools.
 Supported tools:
 - php  -> brew install php
@@ -30,7 +37,7 @@ Supported tools:
 			force, _ := cmd.Flags().GetBool("force")
 			dryRun, _ := cmd.Flags().GetBool("dry-run")
 
-			operations, err := buildInstallOperations(force)
+			operations, err := svc.BuildInstallOperations(force)
 			if err != nil {
 				return err
 			}
@@ -45,7 +52,7 @@ Supported tools:
 			}
 
 			for _, operation := range operations {
-				if err := runInstallOperation(cmd.OutOrStdout(), operation); err != nil {
+				if err := svc.RunInstallOperation(cmd.OutOrStdout(), operation); err != nil {
 					return err
 				}
 			}
@@ -58,52 +65,4 @@ Supported tools:
 	cmd.Flags().Bool("force", false, "install even if the tool already exists")
 	cmd.Flags().Bool("dry-run", false, "show planned install operations only")
 	return cmd
-}
-
-func buildInstallOperations(force bool) ([]string, error) {
-	return denvService().BuildInstallOperations(force)
-}
-
-func buildInstallOperationsForTool(toolName string, force bool) ([]string, error) {
-	return denvService().BuildInstallOperationsForTool(toolName, force)
-}
-
-func buildNodeInstallOperations(force bool) ([]string, error) {
-	return denvService().BuildNodeInstallOperations(force)
-}
-
-func buildPHPInstallOperations(force bool) ([]string, error) {
-	return denvService().BuildPHPInstallOperations(force)
-}
-
-func buildPython3InstallOperations(force bool) ([]string, error) {
-	return denvService().BuildPython3InstallOperations(force)
-}
-
-func buildGoInstallOperations(force bool) ([]string, error) {
-	return denvService().BuildGoInstallOperations(force)
-}
-
-func buildCurlInstallOperations(force bool) ([]string, error) {
-	return denvService().BuildCurlInstallOperations(force)
-}
-
-func buildGitInstallOperations(force bool) ([]string, error) {
-	return denvService().BuildGitInstallOperations(force)
-}
-
-func buildFFmpegInstallOperations(force bool) ([]string, error) {
-	return denvService().BuildFFmpegInstallOperations(force)
-}
-
-func buildTreeInstallOperations(force bool) ([]string, error) {
-	return denvService().BuildTreeInstallOperations(force)
-}
-
-func buildGHInstallOperations(force bool) ([]string, error) {
-	return denvService().BuildGHInstallOperations(force)
-}
-
-func runInstallOperation(out io.Writer, op string) error {
-	return denvService().RunInstallOperation(out, op)
 }

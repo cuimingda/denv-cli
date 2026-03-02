@@ -1,25 +1,33 @@
 package cmd
 
 import (
-    "github.com/spf13/cobra"
+	"github.com/spf13/cobra"
 )
 
 const version = "0.0.1"
 
 func NewRootCmd() *cobra.Command {
-    rootCmd := &cobra.Command{
-        Use:   "denv",
-        Short: "denv command line interface",
-        Version: version,
-        Run: func(cmd *cobra.Command, _ []string) {
-            _ = cmd.Help()
-        },
-    }
+	return NewRootCmdWithContext(NewCLIContext())
+}
 
-    rootCmd.AddCommand(NewListCmd())
-    rootCmd.AddCommand(NewInstallCmd())
-    rootCmd.AddCommand(NewOutdatedCmd())
-    rootCmd.AddCommand(NewUpdateCmd())
+func NewRootCmdWithContext(ctx *CLIContext) *cobra.Command {
+	if ctx == nil || ctx.Service == nil {
+		ctx = NewCLIContext()
+	}
 
-    return rootCmd
+	rootCmd := &cobra.Command{
+		Use:     "denv",
+		Short:   "denv command line interface",
+		Version: version,
+		Run: func(cmd *cobra.Command, _ []string) {
+			_ = cmd.Help()
+		},
+	}
+
+	rootCmd.AddCommand(NewListCmdWithService(ctx.Service))
+	rootCmd.AddCommand(NewInstallCmdWithService(ctx.Service))
+	rootCmd.AddCommand(NewOutdatedCmdWithService(ctx.Service))
+	rootCmd.AddCommand(NewUpdateCmdWithService(ctx.Service))
+
+	return rootCmd
 }
