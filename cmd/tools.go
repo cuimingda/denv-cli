@@ -44,15 +44,26 @@ type ToolService interface {
 type OperationService interface {
 	BuildInstallOperations(force bool) ([]denv.InstallOperation, error)
 	BuildInstallOperationsForTool(toolName string, force bool) ([]denv.InstallOperation, error)
+	BuildInstallQueue(force bool) (denv.InstallQueue, error)
+	BuildInstallQueueForTool(toolName string, force bool) (denv.InstallQueue, error)
 	BuildNodeInstallOperations(force bool) ([]denv.InstallOperation, error)
+	BuildNodeInstallQueue(force bool) (denv.InstallQueue, error)
 	BuildPHPInstallOperations(force bool) ([]denv.InstallOperation, error)
+	BuildPHPInstallQueue(force bool) (denv.InstallQueue, error)
 	BuildPython3InstallOperations(force bool) ([]denv.InstallOperation, error)
+	BuildPython3InstallQueue(force bool) (denv.InstallQueue, error)
 	BuildGoInstallOperations(force bool) ([]denv.InstallOperation, error)
+	BuildGoInstallQueue(force bool) (denv.InstallQueue, error)
 	BuildCurlInstallOperations(force bool) ([]denv.InstallOperation, error)
+	BuildCurlInstallQueue(force bool) (denv.InstallQueue, error)
 	BuildGitInstallOperations(force bool) ([]denv.InstallOperation, error)
+	BuildGitInstallQueue(force bool) (denv.InstallQueue, error)
 	BuildFFmpegInstallOperations(force bool) ([]denv.InstallOperation, error)
+	BuildFFmpegInstallQueue(force bool) (denv.InstallQueue, error)
 	BuildTreeInstallOperations(force bool) ([]denv.InstallOperation, error)
+	BuildTreeInstallQueue(force bool) (denv.InstallQueue, error)
 	BuildGHInstallOperations(force bool) ([]denv.InstallOperation, error)
+	BuildGHInstallQueue(force bool) (denv.InstallQueue, error)
 	RunInstallOperation(out io.Writer, op denv.InstallOperation) error
 	UpdateToolWithOutput(out io.Writer, name string) error
 	InstallNodeWithOutput(out io.Writer, force bool) error
@@ -76,6 +87,7 @@ type OperationService interface {
 	InstallGH() error
 	OutdatedUpdatePlan() ([]denv.OutdatedItem, error)
 	ExecuteInstallOperations(out io.Writer, operations []denv.InstallOperation) error
+	ExecuteInstallQueue(out io.Writer, queue denv.InstallQueue) error
 }
 
 type CommandService interface {

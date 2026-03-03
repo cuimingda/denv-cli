@@ -192,6 +192,67 @@ func TestBuildNodeInstallOperationsForceBypassesNodeAndNpm(t *testing.T) {
 	}
 }
 
+func TestBuildNodeInstallOperationsSkipsWhenNpmExists(t *testing.T) {
+	oldLookup := executableLookup
+	executableLookup = func(name string) (string, error) {
+		if name == "brew" {
+			return "/opt/homebrew/bin/brew", nil
+		}
+		if name == "npm" {
+			return "/usr/local/bin/npm", nil
+		}
+		if name == "node" {
+			return "", exec.ErrNotFound
+		}
+		return "", exec.ErrNotFound
+	}
+	defer func() {
+		executableLookup = oldLookup
+	}()
+
+	ops, err := buildNodeInstallOperations(false)
+	if err != nil {
+		t.Fatalf("buildNodeInstallOperations failed: %v", err)
+	}
+	if len(ops) != 0 {
+		t.Fatalf("expected no install ops when npm already exists, got %v", ops)
+	}
+}
+
+func TestInstallNodeWithOutputSkipsWhenNpmExists(t *testing.T) {
+	oldLookup := executableLookup
+	oldRunnerWithOutput := commandRunnerWithOutput
+	commandCalled := false
+	executableLookup = func(name string) (string, error) {
+		if name == "brew" || name == "npm" {
+			return "/usr/local/bin/" + name, nil
+		}
+		if name == "node" {
+			return "", exec.ErrNotFound
+		}
+		return "", exec.ErrNotFound
+	}
+	commandRunnerWithOutput = func(_ io.Writer, _ string, _ ...string) error {
+		commandCalled = true
+		return nil
+	}
+	defer func() {
+		executableLookup = oldLookup
+		commandRunnerWithOutput = oldRunnerWithOutput
+	}()
+
+	err := InstallNodeWithOutput(io.Discard, false)
+	if err == nil {
+		t.Fatal("expected node install skip to report already installed when npm exists")
+	}
+	if !strings.Contains(err.Error(), "node is already installed") {
+		t.Fatalf("unexpected install error: %v", err)
+	}
+	if commandCalled {
+		t.Fatal("did not expect command execution when npm already exists")
+	}
+}
+
 func TestOutdatedCommandUsesColorizedCurrentVersionWhenStale(t *testing.T) {
 	oldLookup := executableLookup
 	oldRunner := commandRunner

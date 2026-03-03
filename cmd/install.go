@@ -40,15 +40,15 @@ Supported tools:
 			operationStart := time.Now()
 
 			doingf(cmd, "prepare install plan (force=%t, dry-run=%t)", force, dryRun)
-			operations, err := svc.BuildInstallOperations(force)
+			installQueue, err := svc.BuildInstallQueue(force)
 			if err != nil {
 				return err
 			}
-			doingf(cmd, "prepared %d operations in %s", len(operations), time.Since(operationStart))
+			doingf(cmd, "prepared %d operations in %s", installQueue.Len(), time.Since(operationStart))
 
 			if dryRun {
 				doingf(cmd, "showing installation plan without execution")
-				for _, operation := range operations {
+				for _, operation := range installQueue.ToOperations() {
 					if _, err := fmt.Fprintf(cmd.OutOrStdout(), "Would run: %s\n", operation.String()); err != nil {
 						return err
 					}
@@ -57,8 +57,8 @@ Supported tools:
 				return nil
 			}
 
-			doingf(cmd, "start executing %d install operations", len(operations))
-			if err := svc.ExecuteInstallOperations(cmd.OutOrStdout(), operations); err != nil {
+			doingf(cmd, "start executing %d install operations", installQueue.Len())
+			if err := svc.ExecuteInstallQueue(cmd.OutOrStdout(), installQueue); err != nil {
 				return err
 			}
 
