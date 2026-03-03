@@ -26,6 +26,6 @@ func testRuntime() denv.Runtime {
 	}
 }
 
-func testCommandService() CommandService {
-	return NewCLIContextWithRuntime(testRuntime()).Service
+func testCommandService() *denv.Service {
+	return NewCLIContextWithRuntime(testRuntime()).Service.(*denv.Service)
 }

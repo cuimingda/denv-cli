@@ -6,13 +6,12 @@ import (
 	"github.com/cuimingda/denv-cli/internal/denv"
 )
 
-func denvService() CommandService {
-	service := testCommandService()
-	return service
+func denvService() *denv.Service {
+	return testCommandService()
 }
 
 func denvConcreteService() *denv.Service {
-	return denvService().(*denv.Service)
+	return denvService()
 }
 
 func IsCommandAvailable(name string) bool {
