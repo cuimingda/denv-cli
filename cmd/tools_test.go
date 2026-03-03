@@ -28,10 +28,10 @@ func TestNewListCmdWithServicePanicsWhenNilService(t *testing.T) {
 func TestNewInstallCmdWithServicePanicsWhenPlannerMissing(t *testing.T) {
 	defer func() {
 		if recover() == nil {
-			t.Fatalf("expected NewInstallCmdWithService to panic when planner is nil")
+			t.Fatalf("expected NewInstallCmdWithService to panic when context is nil")
 		}
 	}()
-	_ = NewInstallCmdWithService(nil, testCommandService())
+	_ = NewInstallCmdWithService(nil)
 }
 
 func TestNewOutdatedCmdWithServicePanicsWhenNilService(t *testing.T) {
@@ -508,7 +508,7 @@ func TestInstallCommandOutputsDoingProgress(t *testing.T) {
 		commandRunnerWithOutput = oldRunnerWithOutput
 	}()
 
-	cmd := NewInstallCmdWithService(testCommandService(), testCommandService())
+	cmd := NewInstallCmdWithService(testCommandService())
 	out := &bytes.Buffer{}
 	errOut := &bytes.Buffer{}
 	cmd.SetOut(out)
@@ -753,7 +753,7 @@ func TestUpdateCommandUpdatesBrewInstalledToolWithoutPath(t *testing.T) {
 }
 
 func TestInstallCommandRejectsArguments(t *testing.T) {
-	cmd := NewInstallCmdWithService(testCommandService(), testCommandService())
+	cmd := NewInstallCmdWithService(testCommandService())
 	cmd.SetArgs([]string{"php"})
 	if err := cmd.Execute(); err == nil {
 		t.Fatal("expected extra arguments to be rejected")
@@ -808,7 +808,7 @@ func TestInstallCommandForceBypassesExistingInstallationCheck(t *testing.T) {
 		commandRunnerWithOutput = oldRunnerWithOutput
 	}()
 
-	cmd := NewInstallCmdWithService(testCommandService(), testCommandService())
+	cmd := NewInstallCmdWithService(testCommandService())
 	cmd.SetArgs([]string{"--force"})
 	out := &bytes.Buffer{}
 	cmd.SetOut(out)
@@ -938,7 +938,7 @@ func TestInstallCommandShowsHomebrewOutput(t *testing.T) {
 		commandRunnerWithOutput = oldRunnerWithOutput
 	}()
 
-	cmd := NewInstallCmdWithService(testCommandService(), testCommandService())
+	cmd := NewInstallCmdWithService(testCommandService())
 	cmd.SetArgs([]string{})
 	out := &bytes.Buffer{}
 	cmd.SetOut(out)
@@ -994,7 +994,7 @@ func TestInstallCommandCurlLinksAfterInstall(t *testing.T) {
 		commandRunner = oldRunner
 	}()
 
-	cmd := NewInstallCmdWithService(testCommandService(), testCommandService())
+	cmd := NewInstallCmdWithService(testCommandService())
 	cmd.SetArgs([]string{})
 	out := &bytes.Buffer{}
 	cmd.SetOut(out)
@@ -1038,7 +1038,7 @@ func TestInstallCommandDryRunShowsOperationsOnly(t *testing.T) {
 		commandRunnerWithOutput = oldRunnerWithOutput
 	}()
 
-	cmd := NewInstallCmdWithService(testCommandService(), testCommandService())
+	cmd := NewInstallCmdWithService(testCommandService())
 	cmd.SetArgs([]string{"--dry-run"})
 	out := &bytes.Buffer{}
 	cmd.SetOut(out)
@@ -1094,7 +1094,7 @@ func TestInstallCommandDryRunSkipsPython3AndInstallsFFmpegAndTree(t *testing.T) 
 		commandRunnerWithOutput = oldRunnerWithOutput
 	}()
 
-	cmd := NewInstallCmdWithService(testCommandService(), testCommandService())
+	cmd := NewInstallCmdWithService(testCommandService())
 	cmd.SetArgs([]string{"--dry-run"})
 	out := &bytes.Buffer{}
 	cmd.SetOut(out)
@@ -1150,7 +1150,7 @@ func TestInstallCommandInstallsAllTools(t *testing.T) {
 		commandRunnerWithOutput = oldRunnerWithOutput
 	}()
 
-	cmd := NewInstallCmdWithService(testCommandService(), testCommandService())
+	cmd := NewInstallCmdWithService(testCommandService())
 	out := &bytes.Buffer{}
 	cmd.SetOut(out)
 
@@ -1205,7 +1205,7 @@ func TestInstallCommandInstallTreeUsesBrewTreeFormula(t *testing.T) {
 		commandRunnerWithOutput = oldRunnerWithOutput
 	}()
 
-	cmd := NewInstallCmdWithService(testCommandService(), testCommandService())
+	cmd := NewInstallCmdWithService(testCommandService())
 	cmd.SetOut(&bytes.Buffer{})
 
 	if err := cmd.Execute(); err != nil {

@@ -33,14 +33,6 @@ type CLIContext struct {
 	CatalogContext  denv.CatalogContext
 	InstallContext  denv.InstallContext
 	UpdateContext   denv.UpdateContext
-
-	// compatibility fields kept for existing command constructors and tests.
-	Discovery       denv.Discovery
-	InstallPlanner  denv.InstallPlanner
-	InstallExecutor denv.InstallExecutor
-	VersionResolver denv.VersionResolver
-	OutdatedManager denv.OutdatedManager
-	UpdateManager   denv.UpdateManager
 }
 
 func NewCLIContext() *CLIContext {
@@ -55,12 +47,6 @@ func NewCLIContextWithRuntime(rt denv.Runtime) *CLIContext {
 		CatalogContext:  service,
 		InstallContext:  service,
 		UpdateContext:   service,
-		Discovery:       service,
-		InstallPlanner:  service,
-		InstallExecutor: service,
-		VersionResolver: service,
-		OutdatedManager: service,
-		UpdateManager:   service,
 	}
 }
 

@@ -11,32 +11,28 @@ import (
 
 func NewInstallCmd() *cobra.Command {
 	ctx := NewCLIContext()
-	return NewInstallCmdWithService(ctx.InstallPlanner, ctx.InstallExecutor)
+	return NewInstallCmdWithService(ctx.InstallContext)
 }
 
 type installCommandService struct {
-	planner  denv.InstallPlanner
-	executor denv.InstallExecutor
+	service denv.InstallContext
 }
 
 func (s installCommandService) BuildInstallQueue(force bool) (denv.InstallQueue, error) {
-	return s.planner.BuildInstallQueue(force)
+	return s.service.BuildInstallQueue(force)
 }
 
 func (s installCommandService) ExecuteInstallQueue(out io.Writer, queue denv.InstallQueue) error {
-	return s.executor.ExecuteInstallQueue(out, queue)
+	return s.service.ExecuteInstallQueue(out, queue)
 }
 
-func NewInstallCmdWithService(planner denv.InstallPlanner, executor denv.InstallExecutor) *cobra.Command {
-	if planner == nil {
+func NewInstallCmdWithService(service denv.InstallContext) *cobra.Command {
+	if service == nil {
 		panic("install command requires a non-nil install planner")
-	}
-	if executor == nil {
-		panic("install command requires a non-nil install executor")
 	}
 
 	longHelp := denv.InstallLongHelp()
-	service := installCommandService{planner: planner, executor: executor}
+	commandService := installCommandService{service: service}
 
 	cmd := &cobra.Command{
 		Use:     "install",
@@ -50,7 +46,7 @@ func NewInstallCmdWithService(planner denv.InstallPlanner, executor denv.Install
 			operationStart := time.Now()
 
 			doingf(cmd, "prepare install plan (force=%t, dry-run=%t)", force, dryRun)
-			installQueue, err := service.BuildInstallQueue(force)
+			installQueue, err := commandService.BuildInstallQueue(force)
 			if err != nil {
 				return err
 			}
@@ -68,7 +64,7 @@ func NewInstallCmdWithService(planner denv.InstallPlanner, executor denv.Install
 			}
 
 			doingf(cmd, "start executing %d install operations", installQueue.Len())
-			if err := service.ExecuteInstallQueue(cmd.OutOrStdout(), installQueue); err != nil {
+			if err := commandService.ExecuteInstallQueue(cmd.OutOrStdout(), installQueue); err != nil {
 				return err
 			}
 

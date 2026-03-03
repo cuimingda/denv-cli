@@ -12,9 +12,9 @@ import (
 func NewUpdateCmd() *cobra.Command {
 	ctx := NewCLIContext()
 	return NewUpdateCmdWithService(updateCommandService{
-		supportedTools:       ctx.Discovery.SupportedTools,
-		outdatedUpdatePlan:   ctx.UpdateManager.OutdatedUpdatePlan,
-		updateToolWithOutput: ctx.UpdateManager.UpdateToolWithOutput,
+		supportedTools:       ctx.RuntimeContext.SupportedTools,
+		outdatedUpdatePlan:   ctx.UpdateContext.OutdatedUpdatePlan,
+		updateToolWithOutput: ctx.UpdateContext.UpdateToolWithOutput,
 	})
 }
 

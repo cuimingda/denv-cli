@@ -23,7 +23,7 @@ func NewRootCmdWithContext(ctx *CLIContext) *cobra.Command {
 	}
 
 	rootCmd.AddCommand(NewListCmdWithService(ctx.CatalogContext))
-	rootCmd.AddCommand(NewInstallCmdWithService(ctx.InstallContext, ctx.InstallContext))
+	rootCmd.AddCommand(NewInstallCmdWithService(ctx.InstallContext))
 	rootCmd.AddCommand(NewOutdatedCmdWithService(outdatedCommandService{
 		supportedTools: ctx.RuntimeContext.SupportedTools,
 		outdatedChecks: ctx.CatalogContext.OutdatedChecks,
