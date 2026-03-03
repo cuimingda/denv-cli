@@ -4,16 +4,25 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cuimingda/denv-cli/internal/denv"
 	"github.com/spf13/cobra"
 )
 
 func NewUpdateCmd() *cobra.Command {
-	return NewUpdateCmdWithService(NewCLIContext().Service)
+	ctx := NewCLIContext()
+	return NewUpdateCmdWithService(updateCommandService{
+		Discovery:     ctx.Discovery,
+		UpdateManager: ctx.UpdateManager,
+	})
 }
 
 func NewUpdateCmdWithService(svc UpdateCommandService) *cobra.Command {
 	if svc == nil {
-		svc = NewCLIContext().Service
+		ctx := NewCLIContext()
+		svc = updateCommandService{
+			Discovery:     ctx.Discovery,
+			UpdateManager: ctx.UpdateManager,
+		}
 	}
 
 	return &cobra.Command{
@@ -48,4 +57,9 @@ func NewUpdateCmdWithService(svc UpdateCommandService) *cobra.Command {
 			return err
 		},
 	}
+}
+
+type updateCommandService struct {
+	denv.Discovery
+	denv.UpdateManager
 }

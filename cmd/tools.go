@@ -1,40 +1,36 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/cuimingda/denv-cli/internal/denv"
 )
 
+// Command-layer contracts are intentionally narrow, aligned with service ports.
 type ListCommandService interface {
-	ListToolItems(opts denv.ListOptions) ([]denv.ToolListItem, error)
+	denv.VersionResolver
 }
 
 type InstallCommandService interface {
-	BuildInstallQueue(force bool) (denv.InstallQueue, error)
-	ExecuteInstallQueue(out io.Writer, queue denv.InstallQueue) error
+	denv.InstallPlanner
+	denv.InstallExecutor
 }
 
 type OutdatedCommandService interface {
-	SupportedTools() []string
-	OutdatedItems() ([]denv.OutdatedItem, error)
+	denv.VersionResolver
+	denv.Discovery
 }
 
 type UpdateCommandService interface {
-	SupportedTools() []string
-	OutdatedUpdatePlan() ([]denv.OutdatedItem, error)
-	UpdateToolWithOutput(out io.Writer, name string) error
-}
-
-type CommandService interface {
-	ListCommandService
-	InstallCommandService
-	OutdatedCommandService
-	UpdateCommandService
+	denv.UpdateManager
+	denv.Discovery
 }
 
 type CLIContext struct {
-	Service CommandService
+	Service         *denv.Service
+	Discovery       denv.Discovery
+	InstallPlanner  denv.InstallPlanner
+	InstallExecutor denv.InstallExecutor
+	VersionResolver denv.VersionResolver
+	UpdateManager   denv.UpdateManager
 }
 
 func NewCLIContext() *CLIContext {
@@ -42,5 +38,13 @@ func NewCLIContext() *CLIContext {
 }
 
 func NewCLIContextWithRuntime(rt denv.Runtime) *CLIContext {
-	return &CLIContext{Service: denv.NewService(rt)}
+	service := denv.NewService(rt)
+	return &CLIContext{
+		Service:         service,
+		Discovery:       service,
+		InstallPlanner:  service,
+		InstallExecutor: service,
+		VersionResolver: service,
+		UpdateManager:   service,
+	}
 }

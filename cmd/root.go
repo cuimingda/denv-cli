@@ -11,8 +11,24 @@ func NewRootCmd() *cobra.Command {
 }
 
 func NewRootCmdWithContext(ctx *CLIContext) *cobra.Command {
-	if ctx == nil || ctx.Service == nil {
+	if ctx == nil {
 		ctx = NewCLIContext()
+	}
+
+	if ctx.Discovery == nil {
+		ctx.Discovery = ctx.Service
+	}
+	if ctx.InstallPlanner == nil {
+		ctx.InstallPlanner = ctx.Service
+	}
+	if ctx.InstallExecutor == nil {
+		ctx.InstallExecutor = ctx.Service
+	}
+	if ctx.VersionResolver == nil {
+		ctx.VersionResolver = ctx.Service
+	}
+	if ctx.UpdateManager == nil {
+		ctx.UpdateManager = ctx.Service
 	}
 
 	rootCmd := &cobra.Command{
@@ -24,10 +40,16 @@ func NewRootCmdWithContext(ctx *CLIContext) *cobra.Command {
 		},
 	}
 
-	rootCmd.AddCommand(NewListCmdWithService(ctx.Service))
-	rootCmd.AddCommand(NewInstallCmdWithService(ctx.Service))
-	rootCmd.AddCommand(NewOutdatedCmdWithService(ctx.Service))
-	rootCmd.AddCommand(NewUpdateCmdWithService(ctx.Service))
+	rootCmd.AddCommand(NewListCmdWithService(ctx.VersionResolver))
+	rootCmd.AddCommand(NewInstallCmdWithService(ctx.InstallPlanner, ctx.InstallExecutor))
+	rootCmd.AddCommand(NewOutdatedCmdWithService(outdatedCommandService{
+		Discovery:      ctx.Discovery,
+		VersionResolver: ctx.VersionResolver,
+	}))
+	rootCmd.AddCommand(NewUpdateCmdWithService(updateCommandService{
+		Discovery:    ctx.Discovery,
+		UpdateManager: ctx.UpdateManager,
+	}))
 	rootCmd.PersistentFlags().Bool("verbose", false, "enable verbose output")
 
 	return rootCmd

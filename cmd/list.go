@@ -29,12 +29,13 @@ const (
 )
 
 func NewListCmd() *cobra.Command {
-	return NewListCmdWithService(NewCLIContext().Service)
+	ctx := NewCLIContext()
+	return NewListCmdWithService(ctx.VersionResolver)
 }
 
 func NewListCmdWithService(svc ListCommandService) *cobra.Command {
 	if svc == nil {
-		svc = NewCLIContext().Service
+		svc = NewCLIContext().VersionResolver
 	}
 
 	cmd := &cobra.Command{

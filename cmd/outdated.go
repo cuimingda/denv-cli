@@ -13,12 +13,20 @@ import (
 )
 
 func NewOutdatedCmd() *cobra.Command {
-	return NewOutdatedCmdWithService(NewCLIContext().Service)
+	ctx := NewCLIContext()
+	return NewOutdatedCmdWithService(outdatedCommandService{
+		Discovery:      ctx.Discovery,
+		VersionResolver: ctx.VersionResolver,
+	})
 }
 
 func NewOutdatedCmdWithService(svc OutdatedCommandService) *cobra.Command {
 	if svc == nil {
-		svc = NewCLIContext().Service
+		ctx := NewCLIContext()
+		svc = outdatedCommandService{
+			Discovery:      ctx.Discovery,
+			VersionResolver: ctx.VersionResolver,
+		}
 	}
 
 	cmd := &cobra.Command{
@@ -57,6 +65,11 @@ func NewOutdatedCmdWithService(svc OutdatedCommandService) *cobra.Command {
 
 	cmd.Flags().String("output", string(listOutputPlain), "output format: plain|json|table|no-color")
 	return cmd
+}
+
+type outdatedCommandService struct {
+	denv.Discovery
+	denv.VersionResolver
 }
 
 func renderOutdatedPlain(out io.Writer, rows []denv.OutdatedItem, useColor bool) error {

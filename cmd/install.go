@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/cuimingda/denv-cli/internal/denv"
@@ -9,15 +10,68 @@ import (
 )
 
 func NewInstallCmd() *cobra.Command {
-	return NewInstallCmdWithService(NewCLIContext().Service)
+	ctx := NewCLIContext()
+	return NewInstallCmdWithService(ctx.InstallPlanner, ctx.InstallExecutor)
 }
 
-func NewInstallCmdWithService(svc InstallCommandService) *cobra.Command {
-	if svc == nil {
-		svc = NewCLIContext().Service
+type installCommandService struct {
+	planner  denv.InstallPlanner
+	executor denv.InstallExecutor
+}
+
+func (s installCommandService) BuildInstallQueue(force bool) (denv.InstallQueue, error) {
+	return s.planner.BuildInstallQueue(force)
+}
+
+func (s installCommandService) BuildInstallOperations(force bool) ([]denv.InstallOperation, error) {
+	return s.planner.BuildInstallOperations(force)
+}
+
+func (s installCommandService) BuildInstallQueueForTool(toolName string, force bool) (denv.InstallQueue, error) {
+	return s.planner.BuildInstallQueueForTool(toolName, force)
+}
+
+func (s installCommandService) BuildInstallOperationsForTool(toolName string, force bool) ([]denv.InstallOperation, error) {
+	return s.planner.BuildInstallOperationsForTool(toolName, force)
+}
+
+func (s installCommandService) BuildInstallPlan(toolName string, options denv.BuildInstallPlanOptions) ([]denv.InstallOperation, error) {
+	return s.planner.BuildInstallPlan(toolName, options)
+}
+
+func (s installCommandService) InstallTool(name string) error {
+	return s.planner.InstallTool(name)
+}
+
+func (s installCommandService) InstallToolWithOptions(name string, options denv.InstallOptions) error {
+	return s.planner.InstallToolWithOptions(name, options)
+}
+
+func (s installCommandService) ExecuteInstallQueue(out io.Writer, queue denv.InstallQueue) error {
+	return s.executor.ExecuteInstallQueue(out, queue)
+}
+
+func (s installCommandService) ExecuteInstallOperations(out io.Writer, operations []denv.InstallOperation) error {
+	return s.executor.ExecuteInstallOperations(out, operations)
+}
+
+func (s installCommandService) RunInstallOperation(out io.Writer, op denv.InstallOperation) error {
+	return s.executor.RunInstallOperation(out, op)
+}
+
+func NewInstallCmdWithService(planner denv.InstallPlanner, executor denv.InstallExecutor) *cobra.Command {
+	if planner == nil || executor == nil {
+		ctx := NewCLIContext()
+		if planner == nil {
+			planner = ctx.InstallPlanner
+		}
+		if executor == nil {
+			executor = ctx.InstallExecutor
+		}
 	}
 
 	longHelp := denv.InstallLongHelp()
+	service := installCommandService{planner: planner, executor: executor}
 
 	cmd := &cobra.Command{
 		Use:     "install",
@@ -31,7 +85,7 @@ func NewInstallCmdWithService(svc InstallCommandService) *cobra.Command {
 			operationStart := time.Now()
 
 			doingf(cmd, "prepare install plan (force=%t, dry-run=%t)", force, dryRun)
-			installQueue, err := svc.BuildInstallQueue(force)
+			installQueue, err := service.BuildInstallQueue(force)
 			if err != nil {
 				return err
 			}
@@ -49,7 +103,7 @@ func NewInstallCmdWithService(svc InstallCommandService) *cobra.Command {
 			}
 
 			doingf(cmd, "start executing %d install operations", installQueue.Len())
-			if err := svc.ExecuteInstallQueue(cmd.OutOrStdout(), installQueue); err != nil {
+			if err := service.ExecuteInstallQueue(cmd.OutOrStdout(), installQueue); err != nil {
 				return err
 			}
 

@@ -74,49 +74,49 @@ func IsBrewFormulaInstalled(formula string) (bool, error) {
 	return denvService().IsBrewFormulaInstalled(formula)
 }
 
-func InstallNode() error { return denvService().InstallNode() }
+func InstallNode() error { return denvService().InstallTool("node") }
 func InstallNodeWithOutput(out io.Writer, force bool) error {
-	return denvService().InstallNodeWithOutput(out, force)
+	return denvService().InstallToolWithOptions("node", denv.InstallOptions{Force: force, Output: out})
 }
 
-func InstallPHP() error { return denvService().InstallPHP() }
+func InstallPHP() error { return denvService().InstallTool("php") }
 func InstallPHPWithOutput(out io.Writer, force bool) error {
-	return denvService().InstallPHPWithOutput(out, force)
+	return denvService().InstallToolWithOptions("php", denv.InstallOptions{Force: force, Output: out})
 }
 
-func InstallPython3() error { return denvService().InstallPython3() }
+func InstallPython3() error { return denvService().InstallTool("python3") }
 func InstallPython3WithOutput(out io.Writer, force bool) error {
-	return denvService().InstallPython3WithOutput(out, force)
+	return denvService().InstallToolWithOptions("python3", denv.InstallOptions{Force: force, Output: out})
 }
 
-func InstallGo() error { return denvService().InstallGo() }
+func InstallGo() error { return denvService().InstallTool("go") }
 func InstallGoWithOutput(out io.Writer, force bool) error {
-	return denvService().InstallGoWithOutput(out, force)
+	return denvService().InstallToolWithOptions("go", denv.InstallOptions{Force: force, Output: out})
 }
 
-func InstallCurl() error { return denvService().InstallCurl() }
+func InstallCurl() error { return denvService().InstallTool("curl") }
 func InstallCurlWithOutput(out io.Writer, force bool) error {
-	return denvService().InstallCurlWithOutput(out, force)
+	return denvService().InstallToolWithOptions("curl", denv.InstallOptions{Force: force, Output: out})
 }
 
-func InstallGit() error { return denvService().InstallGit() }
+func InstallGit() error { return denvService().InstallTool("git") }
 func InstallGitWithOutput(out io.Writer, force bool) error {
-	return denvService().InstallGitWithOutput(out, force)
+	return denvService().InstallToolWithOptions("git", denv.InstallOptions{Force: force, Output: out})
 }
 
-func InstallFFmpeg() error { return denvService().InstallFFmpeg() }
+func InstallFFmpeg() error { return denvService().InstallTool("ffmpeg") }
 func InstallFFmpegWithOutput(out io.Writer, force bool) error {
-	return denvService().InstallFFmpegWithOutput(out, force)
+	return denvService().InstallToolWithOptions("ffmpeg", denv.InstallOptions{Force: force, Output: out})
 }
 
-func InstallTree() error { return denvService().InstallTree() }
+func InstallTree() error { return denvService().InstallTool("tree") }
 func InstallTreeWithOutput(out io.Writer, force bool) error {
-	return denvService().InstallTreeWithOutput(out, force)
+	return denvService().InstallToolWithOptions("tree", denv.InstallOptions{Force: force, Output: out})
 }
 
-func InstallGH() error { return denvService().InstallGH() }
+func InstallGH() error { return denvService().InstallTool("gh") }
 func InstallGHWithOutput(out io.Writer, force bool) error {
-	return denvService().InstallGHWithOutput(out, force)
+	return denvService().InstallToolWithOptions("gh", denv.InstallOptions{Force: force, Output: out})
 }
 
 func InstallTool(name string) error { return denvService().InstallTool(name) }
@@ -174,7 +174,7 @@ func buildInstallQueueForTool(toolName string, force bool) ([]string, error) {
 }
 
 func buildNodeInstallOperations(force bool) ([]string, error) {
-	ops, err := denvService().BuildNodeInstallOperations(force)
+	ops, err := denvService().BuildInstallOperationsForTool("node", force)
 	if err != nil {
 		return nil, err
 	}
@@ -182,15 +182,15 @@ func buildNodeInstallOperations(force bool) ([]string, error) {
 }
 
 func buildNodeInstallQueue(force bool) ([]string, error) {
-	ops, err := denvService().BuildNodeInstallQueue(force)
+	queue, err := denvService().BuildInstallQueueForTool("node", force)
 	if err != nil {
 		return nil, err
 	}
-	return denvOperationsToStrings(ops.ToOperations()), nil
+	return denvOperationsToStrings(queue.ToOperations()), nil
 }
 
 func buildPHPInstallOperations(force bool) ([]string, error) {
-	ops, err := denvService().BuildPHPInstallOperations(force)
+	ops, err := denvService().BuildInstallOperationsForTool("php", force)
 	if err != nil {
 		return nil, err
 	}
@@ -198,15 +198,15 @@ func buildPHPInstallOperations(force bool) ([]string, error) {
 }
 
 func buildPHPInstallQueue(force bool) ([]string, error) {
-	ops, err := denvService().BuildPHPInstallQueue(force)
+	queue, err := denvService().BuildInstallQueueForTool("php", force)
 	if err != nil {
 		return nil, err
 	}
-	return denvOperationsToStrings(ops.ToOperations()), nil
+	return denvOperationsToStrings(queue.ToOperations()), nil
 }
 
 func buildPython3InstallOperations(force bool) ([]string, error) {
-	ops, err := denvService().BuildPython3InstallOperations(force)
+	ops, err := denvService().BuildInstallOperationsForTool("python3", force)
 	if err != nil {
 		return nil, err
 	}
@@ -214,15 +214,15 @@ func buildPython3InstallOperations(force bool) ([]string, error) {
 }
 
 func buildPython3InstallQueue(force bool) ([]string, error) {
-	ops, err := denvService().BuildPython3InstallQueue(force)
+	queue, err := denvService().BuildInstallQueueForTool("python3", force)
 	if err != nil {
 		return nil, err
 	}
-	return denvOperationsToStrings(ops.ToOperations()), nil
+	return denvOperationsToStrings(queue.ToOperations()), nil
 }
 
 func buildGoInstallOperations(force bool) ([]string, error) {
-	ops, err := denvService().BuildGoInstallOperations(force)
+	ops, err := denvService().BuildInstallOperationsForTool("go", force)
 	if err != nil {
 		return nil, err
 	}
@@ -230,15 +230,15 @@ func buildGoInstallOperations(force bool) ([]string, error) {
 }
 
 func buildGoInstallQueue(force bool) ([]string, error) {
-	ops, err := denvService().BuildGoInstallQueue(force)
+	queue, err := denvService().BuildInstallQueueForTool("go", force)
 	if err != nil {
 		return nil, err
 	}
-	return denvOperationsToStrings(ops.ToOperations()), nil
+	return denvOperationsToStrings(queue.ToOperations()), nil
 }
 
 func buildCurlInstallOperations(force bool) ([]string, error) {
-	ops, err := denvService().BuildCurlInstallOperations(force)
+	ops, err := denvService().BuildInstallOperationsForTool("curl", force)
 	if err != nil {
 		return nil, err
 	}
@@ -246,15 +246,15 @@ func buildCurlInstallOperations(force bool) ([]string, error) {
 }
 
 func buildCurlInstallQueue(force bool) ([]string, error) {
-	ops, err := denvService().BuildCurlInstallQueue(force)
+	queue, err := denvService().BuildInstallQueueForTool("curl", force)
 	if err != nil {
 		return nil, err
 	}
-	return denvOperationsToStrings(ops.ToOperations()), nil
+	return denvOperationsToStrings(queue.ToOperations()), nil
 }
 
 func buildGitInstallOperations(force bool) ([]string, error) {
-	ops, err := denvService().BuildGitInstallOperations(force)
+	ops, err := denvService().BuildInstallOperationsForTool("git", force)
 	if err != nil {
 		return nil, err
 	}
@@ -262,15 +262,15 @@ func buildGitInstallOperations(force bool) ([]string, error) {
 }
 
 func buildGitInstallQueue(force bool) ([]string, error) {
-	ops, err := denvService().BuildGitInstallQueue(force)
+	queue, err := denvService().BuildInstallQueueForTool("git", force)
 	if err != nil {
 		return nil, err
 	}
-	return denvOperationsToStrings(ops.ToOperations()), nil
+	return denvOperationsToStrings(queue.ToOperations()), nil
 }
 
 func buildFFmpegInstallOperations(force bool) ([]string, error) {
-	ops, err := denvService().BuildFFmpegInstallOperations(force)
+	ops, err := denvService().BuildInstallOperationsForTool("ffmpeg", force)
 	if err != nil {
 		return nil, err
 	}
@@ -278,15 +278,15 @@ func buildFFmpegInstallOperations(force bool) ([]string, error) {
 }
 
 func buildFFmpegInstallQueue(force bool) ([]string, error) {
-	ops, err := denvService().BuildFFmpegInstallQueue(force)
+	queue, err := denvService().BuildInstallQueueForTool("ffmpeg", force)
 	if err != nil {
 		return nil, err
 	}
-	return denvOperationsToStrings(ops.ToOperations()), nil
+	return denvOperationsToStrings(queue.ToOperations()), nil
 }
 
 func buildTreeInstallOperations(force bool) ([]string, error) {
-	ops, err := denvService().BuildTreeInstallOperations(force)
+	ops, err := denvService().BuildInstallOperationsForTool("tree", force)
 	if err != nil {
 		return nil, err
 	}
@@ -294,15 +294,15 @@ func buildTreeInstallOperations(force bool) ([]string, error) {
 }
 
 func buildTreeInstallQueue(force bool) ([]string, error) {
-	ops, err := denvService().BuildTreeInstallQueue(force)
+	queue, err := denvService().BuildInstallQueueForTool("tree", force)
 	if err != nil {
 		return nil, err
 	}
-	return denvOperationsToStrings(ops.ToOperations()), nil
+	return denvOperationsToStrings(queue.ToOperations()), nil
 }
 
 func buildGHInstallOperations(force bool) ([]string, error) {
-	ops, err := denvService().BuildGHInstallOperations(force)
+	ops, err := denvService().BuildInstallOperationsForTool("gh", force)
 	if err != nil {
 		return nil, err
 	}
@@ -310,11 +310,11 @@ func buildGHInstallOperations(force bool) ([]string, error) {
 }
 
 func buildGHInstallQueue(force bool) ([]string, error) {
-	ops, err := denvService().BuildGHInstallQueue(force)
+	queue, err := denvService().BuildInstallQueueForTool("gh", force)
 	if err != nil {
 		return nil, err
 	}
-	return denvOperationsToStrings(ops.ToOperations()), nil
+	return denvOperationsToStrings(queue.ToOperations()), nil
 }
 
 func runInstallOperation(out io.Writer, op string) error {
