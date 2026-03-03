@@ -3,7 +3,7 @@ package cmd
 import (
 	"io"
 
-	"github.com/cuimingda/denv-cli/internal/denv"
+	"github.com/cuimingda/denv-cli/internal/interval"
 )
 
 // Command-layer contracts are intentionally narrow, aligned with service ports.

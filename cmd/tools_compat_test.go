@@ -3,7 +3,7 @@ package cmd
 import (
 	"io"
 
-	"github.com/cuimingda/denv-cli/internal/denv"
+	"github.com/cuimingda/denv-cli/internal/interval"
 )
 
 func denvService() *denv.Service {

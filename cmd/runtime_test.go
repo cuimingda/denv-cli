@@ -4,7 +4,7 @@ import (
 	"io"
 	"os/exec"
 
-	"github.com/cuimingda/denv-cli/internal/denv"
+	"github.com/cuimingda/denv-cli/internal/interval"
 )
 
 var (

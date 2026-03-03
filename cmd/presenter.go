@@ -7,7 +7,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/cuimingda/denv-cli/internal/denv"
+	"github.com/cuimingda/denv-cli/internal/interval"
 )
 
 type ToolPresenter interface {
