@@ -11,6 +11,7 @@ import (
 
 func NewInstallCmd() *cobra.Command {
 	ctx := NewCLIContext()
+	ctx = ensureCLIContext(ctx)
 	return NewInstallCmdWithService(ctx.InstallPlanner, ctx.InstallExecutor)
 }
 
@@ -23,45 +24,13 @@ func (s installCommandService) BuildInstallQueue(force bool) (denv.InstallQueue,
 	return s.planner.BuildInstallQueue(force)
 }
 
-func (s installCommandService) BuildInstallOperations(force bool) ([]denv.InstallOperation, error) {
-	return s.planner.BuildInstallOperations(force)
-}
-
-func (s installCommandService) BuildInstallQueueForTool(toolName string, force bool) (denv.InstallQueue, error) {
-	return s.planner.BuildInstallQueueForTool(toolName, force)
-}
-
-func (s installCommandService) BuildInstallOperationsForTool(toolName string, force bool) ([]denv.InstallOperation, error) {
-	return s.planner.BuildInstallOperationsForTool(toolName, force)
-}
-
-func (s installCommandService) BuildInstallPlan(toolName string, options denv.BuildInstallPlanOptions) ([]denv.InstallOperation, error) {
-	return s.planner.BuildInstallPlan(toolName, options)
-}
-
-func (s installCommandService) InstallTool(name string) error {
-	return s.planner.InstallTool(name)
-}
-
-func (s installCommandService) InstallToolWithOptions(name string, options denv.InstallOptions) error {
-	return s.planner.InstallToolWithOptions(name, options)
-}
-
 func (s installCommandService) ExecuteInstallQueue(out io.Writer, queue denv.InstallQueue) error {
 	return s.executor.ExecuteInstallQueue(out, queue)
 }
 
-func (s installCommandService) ExecuteInstallOperations(out io.Writer, operations []denv.InstallOperation) error {
-	return s.executor.ExecuteInstallOperations(out, operations)
-}
-
-func (s installCommandService) RunInstallOperation(out io.Writer, op denv.InstallOperation) error {
-	return s.executor.RunInstallOperation(out, op)
-}
-
 func NewInstallCmdWithService(planner denv.InstallPlanner, executor denv.InstallExecutor) *cobra.Command {
 	if planner == nil || executor == nil {
-		ctx := NewCLIContext()
+		ctx := ensureCLIContext(NewCLIContext())
 		if planner == nil {
 			planner = ctx.InstallPlanner
 		}

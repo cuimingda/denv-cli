@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/cuimingda/denv-cli/internal/denv"
@@ -9,19 +10,21 @@ import (
 )
 
 func NewUpdateCmd() *cobra.Command {
-	ctx := NewCLIContext()
+	ctx := ensureCLIContext(NewCLIContext())
 	return NewUpdateCmdWithService(updateCommandService{
-		Discovery:     ctx.Discovery,
-		UpdateManager: ctx.UpdateManager,
+		supportedTools:       ctx.Discovery.SupportedTools,
+		outdatedUpdatePlan:   ctx.UpdateManager.OutdatedUpdatePlan,
+		updateToolWithOutput: ctx.UpdateManager.UpdateToolWithOutput,
 	})
 }
 
 func NewUpdateCmdWithService(svc UpdateCommandService) *cobra.Command {
 	if svc == nil {
-		ctx := NewCLIContext()
+		ctx := ensureCLIContext(NewCLIContext())
 		svc = updateCommandService{
-			Discovery:     ctx.Discovery,
-			UpdateManager: ctx.UpdateManager,
+			supportedTools:       ctx.Discovery.SupportedTools,
+			outdatedUpdatePlan:   ctx.UpdateManager.OutdatedUpdatePlan,
+			updateToolWithOutput: ctx.UpdateManager.UpdateToolWithOutput,
 		}
 	}
 
@@ -60,6 +63,19 @@ func NewUpdateCmdWithService(svc UpdateCommandService) *cobra.Command {
 }
 
 type updateCommandService struct {
-	denv.Discovery
-	denv.UpdateManager
+	supportedTools       func() []string
+	outdatedUpdatePlan   func() ([]denv.OutdatedItem, error)
+	updateToolWithOutput func(io.Writer, string) error
+}
+
+func (s updateCommandService) SupportedTools() []string {
+	return s.supportedTools()
+}
+
+func (s updateCommandService) OutdatedUpdatePlan() ([]denv.OutdatedItem, error) {
+	return s.outdatedUpdatePlan()
+}
+
+func (s updateCommandService) UpdateToolWithOutput(out io.Writer, name string) error {
+	return s.updateToolWithOutput(out, name)
 }

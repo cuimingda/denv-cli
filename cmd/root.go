@@ -11,25 +11,7 @@ func NewRootCmd() *cobra.Command {
 }
 
 func NewRootCmdWithContext(ctx *CLIContext) *cobra.Command {
-	if ctx == nil {
-		ctx = NewCLIContext()
-	}
-
-	if ctx.Discovery == nil {
-		ctx.Discovery = ctx.Service
-	}
-	if ctx.InstallPlanner == nil {
-		ctx.InstallPlanner = ctx.Service
-	}
-	if ctx.InstallExecutor == nil {
-		ctx.InstallExecutor = ctx.Service
-	}
-	if ctx.VersionResolver == nil {
-		ctx.VersionResolver = ctx.Service
-	}
-	if ctx.UpdateManager == nil {
-		ctx.UpdateManager = ctx.Service
-	}
+	ctx = ensureCLIContext(ctx)
 
 	rootCmd := &cobra.Command{
 		Use:     "denv",
@@ -43,12 +25,13 @@ func NewRootCmdWithContext(ctx *CLIContext) *cobra.Command {
 	rootCmd.AddCommand(NewListCmdWithService(ctx.VersionResolver))
 	rootCmd.AddCommand(NewInstallCmdWithService(ctx.InstallPlanner, ctx.InstallExecutor))
 	rootCmd.AddCommand(NewOutdatedCmdWithService(outdatedCommandService{
-		Discovery:      ctx.Discovery,
-		VersionResolver: ctx.VersionResolver,
+		supportedTools:  ctx.Discovery.SupportedTools,
+		outdatedItems:   ctx.VersionResolver.OutdatedItems,
 	}))
 	rootCmd.AddCommand(NewUpdateCmdWithService(updateCommandService{
-		Discovery:    ctx.Discovery,
-		UpdateManager: ctx.UpdateManager,
+		supportedTools:       ctx.Discovery.SupportedTools,
+		outdatedUpdatePlan:   ctx.UpdateManager.OutdatedUpdatePlan,
+		updateToolWithOutput: ctx.UpdateManager.UpdateToolWithOutput,
 	}))
 	rootCmd.PersistentFlags().Bool("verbose", false, "enable verbose output")
 

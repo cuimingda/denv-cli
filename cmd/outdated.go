@@ -13,19 +13,19 @@ import (
 )
 
 func NewOutdatedCmd() *cobra.Command {
-	ctx := NewCLIContext()
+	ctx := ensureCLIContext(NewCLIContext())
 	return NewOutdatedCmdWithService(outdatedCommandService{
-		Discovery:      ctx.Discovery,
-		VersionResolver: ctx.VersionResolver,
+		supportedTools:  ctx.Discovery.SupportedTools,
+		outdatedItems:   ctx.VersionResolver.OutdatedItems,
 	})
 }
 
 func NewOutdatedCmdWithService(svc OutdatedCommandService) *cobra.Command {
 	if svc == nil {
-		ctx := NewCLIContext()
+		ctx := ensureCLIContext(NewCLIContext())
 		svc = outdatedCommandService{
-			Discovery:      ctx.Discovery,
-			VersionResolver: ctx.VersionResolver,
+			supportedTools:  ctx.Discovery.SupportedTools,
+			outdatedItems:   ctx.VersionResolver.OutdatedItems,
 		}
 	}
 
@@ -68,8 +68,16 @@ func NewOutdatedCmdWithService(svc OutdatedCommandService) *cobra.Command {
 }
 
 type outdatedCommandService struct {
-	denv.Discovery
-	denv.VersionResolver
+	supportedTools func() []string
+	outdatedItems  func() ([]denv.OutdatedItem, error)
+}
+
+func (s outdatedCommandService) SupportedTools() []string {
+	return s.supportedTools()
+}
+
+func (s outdatedCommandService) OutdatedItems() ([]denv.OutdatedItem, error) {
+	return s.outdatedItems()
 }
 
 func renderOutdatedPlain(out io.Writer, rows []denv.OutdatedItem, useColor bool) error {
