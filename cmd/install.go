@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cuimingda/denv-cli/internal/denv"
 	"github.com/spf13/cobra"
 )
 
@@ -16,17 +17,7 @@ func NewInstallCmdWithService(svc InstallCommandService) *cobra.Command {
 		svc = NewCLIContext().Service
 	}
 
-	longHelp := `Install all supported developer tools.
-Supported tools:
-- php  -> brew install php
-- python3 -> brew install python3
-- node -> brew install node
-- go -> brew install go
-- curl -> brew install curl
-- gh -> brew install gh
-- git -> brew install git
-- ffmpeg -> brew install ffmpeg
-- tree -> brew install tree`
+	longHelp := denv.InstallLongHelp()
 
 	cmd := &cobra.Command{
 		Use:     "install",
