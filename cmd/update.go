@@ -5,7 +5,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/cuimingda/denv-cli/internal/interval"
+	"github.com/cuimingda/denv-cli/internal"
 	"github.com/spf13/cobra"
 )
 
