@@ -18,7 +18,7 @@ type InstallCommandService interface {
 
 type OutdatedCommandService interface {
 	SupportedTools() []string
-	OutdatedItems() ([]denv.OutdatedItem, error)
+	OutdatedChecks() ([]denv.ToolCheckResult, error)
 }
 
 type UpdateCommandService interface {

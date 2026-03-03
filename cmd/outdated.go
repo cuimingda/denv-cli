@@ -13,10 +13,10 @@ import (
 )
 
 func NewOutdatedCmd() *cobra.Command {
-	ctx := ensureCLIContext(NewCLIContext())
+	ctx := NewCLIContext()
 	return NewOutdatedCmdWithService(outdatedCommandService{
 		supportedTools: ctx.Discovery.SupportedTools,
-		outdatedItems:  ctx.VersionResolver.OutdatedItems,
+		outdatedChecks: ctx.OutdatedManager.OutdatedChecks,
 	})
 }
 
@@ -40,7 +40,7 @@ func NewOutdatedCmdWithService(svc OutdatedCommandService) *cobra.Command {
 			start := time.Now()
 			doingf(cmd, "check outdated status for %d tools", len(svc.SupportedTools()))
 
-			rows, err := svc.OutdatedItems()
+			rows, err := svc.OutdatedChecks()
 			if err != nil {
 				return err
 			}
@@ -65,18 +65,18 @@ func NewOutdatedCmdWithService(svc OutdatedCommandService) *cobra.Command {
 
 type outdatedCommandService struct {
 	supportedTools func() []string
-	outdatedItems  func() ([]denv.OutdatedItem, error)
+	outdatedChecks func() ([]denv.ToolCheckResult, error)
 }
 
 func (s outdatedCommandService) SupportedTools() []string {
 	return s.supportedTools()
 }
 
-func (s outdatedCommandService) OutdatedItems() ([]denv.OutdatedItem, error) {
-	return s.outdatedItems()
+func (s outdatedCommandService) OutdatedChecks() ([]denv.ToolCheckResult, error) {
+	return s.outdatedChecks()
 }
 
-func renderOutdatedPlain(out io.Writer, rows []denv.OutdatedItem, useColor bool) error {
+func renderOutdatedPlain(out io.Writer, rows []denv.ToolCheckResult, useColor bool) error {
 	for _, row := range rows {
 		line := renderOutdatedLine(row, useColor)
 		if _, err := fmt.Fprintln(out, line); err != nil {
@@ -86,10 +86,10 @@ func renderOutdatedPlain(out io.Writer, rows []denv.OutdatedItem, useColor bool)
 	return nil
 }
 
-func renderOutdatedLine(row denv.OutdatedItem, useColor bool) string {
+func renderOutdatedLine(row denv.ToolCheckResult, useColor bool) string {
 	errorSuffix := ""
-	if row.CheckError != "" {
-		errorSuffix = " (" + row.CheckError + ")"
+	if row.CheckError != nil {
+		errorSuffix = " (" + row.CheckError.Error() + ")"
 	}
 
 	switch row.State {
@@ -116,7 +116,7 @@ func renderOutdatedLine(row denv.OutdatedItem, useColor bool) string {
 	}
 }
 
-func renderOutdatedJSON(out io.Writer, rows []denv.OutdatedItem) error {
+func renderOutdatedJSON(out io.Writer, rows []denv.ToolCheckResult) error {
 	payload := make([]map[string]any, 0, len(rows))
 	for _, row := range rows {
 		record := map[string]any{
@@ -124,8 +124,8 @@ func renderOutdatedJSON(out io.Writer, rows []denv.OutdatedItem) error {
 			"display_name": row.DisplayName,
 			"state":        row.State,
 		}
-		if row.CheckError != "" {
-			record["check_error"] = row.CheckError
+		if row.CheckError != nil {
+			record["check_error"] = row.CheckError.Error()
 		}
 		if row.Current != "" {
 			record["current"] = row.Current
@@ -143,7 +143,7 @@ func renderOutdatedJSON(out io.Writer, rows []denv.OutdatedItem) error {
 	return err
 }
 
-func renderOutdatedTable(out io.Writer, rows []denv.OutdatedItem) error {
+func renderOutdatedTable(out io.Writer, rows []denv.ToolCheckResult) error {
 	tw := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
 	if _, err := fmt.Fprintln(tw, "NAME\tCURRENT\tLATEST\tSTATE"); err != nil {
 		return err
@@ -159,8 +159,8 @@ func renderOutdatedTable(out io.Writer, rows []denv.OutdatedItem) error {
 			latest = "n/a"
 		}
 		state := string(row.State)
-		if row.CheckError != "" {
-			state = state + " (" + row.CheckError + ")"
+		if row.CheckError != nil {
+			state = state + " (" + row.CheckError.Error() + ")"
 		}
 		if _, err := fmt.Fprintln(tw, strings.Join([]string{row.Name, current, latest, state}, "\t")); err != nil {
 			return err

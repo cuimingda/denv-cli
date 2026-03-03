@@ -9,6 +9,58 @@ import (
 	"testing"
 )
 
+func TestEnsureCLIContextOnlyCreatesContextWhenNil(t *testing.T) {
+	partial := &CLIContext{}
+	if got := ensureCLIContext(partial); got != partial {
+		t.Fatalf("ensureCLIContext should return original context when not nil")
+	}
+}
+
+func TestNewListCmdWithServicePanicsWhenNilService(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatalf("expected NewListCmdWithService to panic when service is nil")
+		}
+	}()
+	_ = NewListCmdWithService(nil)
+}
+
+func TestNewInstallCmdWithServicePanicsWhenPlannerMissing(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatalf("expected NewInstallCmdWithService to panic when planner is nil")
+		}
+	}()
+	_ = NewInstallCmdWithService(nil, testCommandService())
+}
+
+func TestNewOutdatedCmdWithServicePanicsWhenNilService(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatalf("expected NewOutdatedCmdWithService to panic when service is nil")
+		}
+	}()
+	_ = NewOutdatedCmdWithService(nil)
+}
+
+func TestNewUpdateCmdWithServicePanicsWhenNilService(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatalf("expected NewUpdateCmdWithService to panic when service is nil")
+		}
+	}()
+	_ = NewUpdateCmdWithService(nil)
+}
+
+func TestNewRootCmdWithContextPanicsWhenDependenciesMissing(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatalf("expected NewRootCmdWithContext to panic when context dependencies are missing")
+		}
+	}()
+	_ = NewRootCmdWithContext(&CLIContext{})
+}
+
 func TestNewListCmdDefaultShowsToolsOnly(t *testing.T) {
 	oldLookup := executableLookup
 	oldRunner := commandRunner

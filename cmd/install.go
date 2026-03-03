@@ -11,7 +11,6 @@ import (
 
 func NewInstallCmd() *cobra.Command {
 	ctx := NewCLIContext()
-	ctx = ensureCLIContext(ctx)
 	return NewInstallCmdWithService(ctx.InstallPlanner, ctx.InstallExecutor)
 }
 

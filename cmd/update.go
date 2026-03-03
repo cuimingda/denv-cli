@@ -10,7 +10,7 @@ import (
 )
 
 func NewUpdateCmd() *cobra.Command {
-	ctx := ensureCLIContext(NewCLIContext())
+	ctx := NewCLIContext()
 	return NewUpdateCmdWithService(updateCommandService{
 		supportedTools:       ctx.Discovery.SupportedTools,
 		outdatedUpdatePlan:   ctx.UpdateManager.OutdatedUpdatePlan,
