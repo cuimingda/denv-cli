@@ -32,7 +32,7 @@ func NewListCmd() *cobra.Command {
 	return NewListCmdWithService(NewCLIContext().Service)
 }
 
-func NewListCmdWithService(svc ToolService) *cobra.Command {
+func NewListCmdWithService(svc ListCommandService) *cobra.Command {
 	if svc == nil {
 		svc = NewCLIContext().Service
 	}

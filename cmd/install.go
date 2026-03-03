@@ -11,7 +11,7 @@ func NewInstallCmd() *cobra.Command {
 	return NewInstallCmdWithService(NewCLIContext().Service)
 }
 
-func NewInstallCmdWithService(svc CommandService) *cobra.Command {
+func NewInstallCmdWithService(svc InstallCommandService) *cobra.Command {
 	if svc == nil {
 		svc = NewCLIContext().Service
 	}

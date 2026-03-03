@@ -11,7 +11,7 @@ func NewUpdateCmd() *cobra.Command {
 	return NewUpdateCmdWithService(NewCLIContext().Service)
 }
 
-func NewUpdateCmdWithService(svc CommandService) *cobra.Command {
+func NewUpdateCmdWithService(svc UpdateCommandService) *cobra.Command {
 	if svc == nil {
 		svc = NewCLIContext().Service
 	}

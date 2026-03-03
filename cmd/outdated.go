@@ -16,7 +16,7 @@ func NewOutdatedCmd() *cobra.Command {
 	return NewOutdatedCmdWithService(NewCLIContext().Service)
 }
 
-func NewOutdatedCmdWithService(svc CommandService) *cobra.Command {
+func NewOutdatedCmdWithService(svc OutdatedCommandService) *cobra.Command {
 	if svc == nil {
 		svc = NewCLIContext().Service
 	}

@@ -9,40 +9,30 @@ import (
 type ToolRegistry interface {
 	SupportedTools() []string
 	InstallableTools() []string
+	ResolveCommandPackages(name string) []denv.Package
 	ToolDisplayName(name string) string
-	CompareVersions(current string, latest string) int
 	IsInstallableTool(name string) bool
 }
 
-type ToolService interface {
-	ToolRegistry
-	ToolStateProbe
-	InstallPlanner
-	ExecutionEngine
-	UpdatePolicy
-}
-
-type ToolStateProbe interface {
-	OutdatedItems() ([]denv.OutdatedItem, error)
-	ListToolItems(opts denv.ListOptions) ([]denv.ToolListItem, error)
-	ToolInstallState(name string) (bool, string, bool, error)
-	ToolVersion(name string) (string, error)
-	ToolVersionWithPath(name, commandPath string) (string, error)
-	ToolVersionForOutdated(name string) (string, error)
-	ToolLatestVersion(name string) (string, error)
+type ToolStateReader interface {
 	IsCommandAvailable(name string) bool
+	ToolInstallState(name string) (installed bool, commandPath string, installedByHomebrew bool, err error)
 	CommandPath(name string) (string, error)
+	ResolvedBrewBinaryPath(name, formula string) (string, error)
 	IsManagedByHomebrew(path string) bool
 	IsBrewInstalled() bool
 	IsBrewFormulaInstalled(formula string) (bool, error)
-	ResolvedBrewBinaryPath(name, formula string) (string, error)
+}
+
+type ToolInstallPlanner interface {
+	BuildInstallOperations(force bool) ([]denv.InstallOperation, error)
+	BuildInstallQueue(force bool) (denv.InstallQueue, error)
+	BuildInstallOperationsForTool(toolName string, force bool) ([]denv.InstallOperation, error)
+	BuildInstallPlan(toolName string, options denv.BuildInstallPlanOptions) ([]denv.InstallOperation, error)
+	BuildInstallQueueForTool(toolName string, force bool) (denv.InstallQueue, error)
 }
 
 type InstallPlanner interface {
-	BuildInstallOperations(force bool) ([]denv.InstallOperation, error)
-	BuildInstallOperationsForTool(toolName string, force bool) ([]denv.InstallOperation, error)
-	BuildInstallQueue(force bool) (denv.InstallQueue, error)
-	BuildInstallQueueForTool(toolName string, force bool) (denv.InstallQueue, error)
 	BuildNodeInstallOperations(force bool) ([]denv.InstallOperation, error)
 	BuildNodeInstallQueue(force bool) (denv.InstallQueue, error)
 	BuildPHPInstallOperations(force bool) ([]denv.InstallOperation, error)
@@ -61,48 +51,90 @@ type InstallPlanner interface {
 	BuildTreeInstallQueue(force bool) (denv.InstallQueue, error)
 	BuildGHInstallOperations(force bool) ([]denv.InstallOperation, error)
 	BuildGHInstallQueue(force bool) (denv.InstallQueue, error)
+	InstallToolWithOptions(name string, options denv.InstallOptions) error
 }
 
-type UpdatePolicy interface {
-	OutdatedUpdatePlan() ([]denv.OutdatedItem, error)
-	UpdateToolWithOutput(out io.Writer, name string) error
-}
-
-type ExecutionEngine interface {
+type InstallExecutor interface {
 	RunInstallOperation(out io.Writer, op denv.InstallOperation) error
-	InstallNodeWithOutput(out io.Writer, force bool) error
-	InstallPHPWithOutput(out io.Writer, force bool) error
-	InstallPython3WithOutput(out io.Writer, force bool) error
-	InstallGoWithOutput(out io.Writer, force bool) error
-	InstallCurlWithOutput(out io.Writer, force bool) error
-	InstallGitWithOutput(out io.Writer, force bool) error
-	InstallFFmpegWithOutput(out io.Writer, force bool) error
-	InstallTreeWithOutput(out io.Writer, force bool) error
-	InstallGHWithOutput(out io.Writer, force bool) error
-	InstallTool(name string) error
-	InstallNode() error
-	InstallPHP() error
-	InstallPython3() error
-	InstallGo() error
-	InstallCurl() error
-	InstallGit() error
-	InstallFFmpeg() error
-	InstallTree() error
-	InstallGH() error
 	ExecuteInstallOperations(out io.Writer, operations []denv.InstallOperation) error
 	ExecuteInstallQueue(out io.Writer, queue denv.InstallQueue) error
 }
 
+type InstallActions interface {
+	InstallTool(name string) error
+	InstallNode() error
+	InstallNodeWithOutput(out io.Writer, force bool) error
+	InstallPHP() error
+	InstallPHPWithOutput(out io.Writer, force bool) error
+	InstallPython3() error
+	InstallPython3WithOutput(out io.Writer, force bool) error
+	InstallGo() error
+	InstallGoWithOutput(out io.Writer, force bool) error
+	InstallCurl() error
+	InstallCurlWithOutput(out io.Writer, force bool) error
+	InstallGit() error
+	InstallGitWithOutput(out io.Writer, force bool) error
+	InstallFFmpeg() error
+	InstallFFmpegWithOutput(out io.Writer, force bool) error
+	InstallTree() error
+	InstallTreeWithOutput(out io.Writer, force bool) error
+	InstallGH() error
+	InstallGHWithOutput(out io.Writer, force bool) error
+}
+
+type VersionService interface {
+	ToolVersion(name string) (string, error)
+	ToolVersionWithPath(name, commandPath string) (string, error)
+	ToolVersionForOutdated(name string) (string, error)
+	ToolLatestVersion(name string) (string, error)
+	CompareVersions(current string, latest string) int
+	ExtractVersion(out string) (string, error)
+	SplitVersionParts(version string) []int
+	ParseBrewStableVersion(output []byte) (string, error)
+}
+
+type UpdatePlanner interface {
+	OutdatedItems() ([]denv.OutdatedItem, error)
+	OutdatedUpdatePlan() ([]denv.OutdatedItem, error)
+	UpdateToolWithOutput(out io.Writer, name string) error
+}
+
+type ListCommandService interface {
+	ListToolItems(opts denv.ListOptions) ([]denv.ToolListItem, error)
+}
+
+type InstallCommandService interface {
+	BuildInstallQueue(force bool) (denv.InstallQueue, error)
+	ExecuteInstallQueue(out io.Writer, queue denv.InstallQueue) error
+}
+
+type OutdatedCommandService interface {
+	SupportedTools() []string
+	OutdatedItems() ([]denv.OutdatedItem, error)
+}
+
+type UpdateCommandService interface {
+	SupportedTools() []string
+	OutdatedUpdatePlan() ([]denv.OutdatedItem, error)
+	UpdateToolWithOutput(out io.Writer, name string) error
+}
+
 type CommandService interface {
 	ToolRegistry
-	ToolStateProbe
+	ToolStateReader
+	VersionService
 	InstallPlanner
-	ExecutionEngine
-	UpdatePolicy
+	InstallExecutor
+	UpdatePlanner
+	ListCommandService
+	InstallCommandService
+	OutdatedCommandService
+	UpdateCommandService
+	ToolInstallPlanner
+	InstallActions
 }
 
 type CLIContext struct {
-	Runtime denv.Runtime
 	Service CommandService
 }
 
@@ -111,9 +143,5 @@ func NewCLIContext() *CLIContext {
 }
 
 func NewCLIContextWithRuntime(rt denv.Runtime) *CLIContext {
-	normalized := denv.NormalizeRuntime(rt)
-	return &CLIContext{
-		Runtime: normalized,
-		Service: denv.NewService(normalized),
-	}
+	return &CLIContext{Service: denv.NewService(rt)}
 }
