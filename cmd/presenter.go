@@ -14,6 +14,7 @@ type ToolPresenter interface {
 	Render(out io.Writer) error
 }
 
+// NewListPresenter 创建列表展示实现。
 func NewListPresenter(mode listOutputMode, opts listRenderOptions, items []denv.ToolListItem) ToolPresenter {
 	return listPresenter{
 		mode:  mode,
@@ -22,6 +23,7 @@ func NewListPresenter(mode listOutputMode, opts listRenderOptions, items []denv.
 	}
 }
 
+// NewOutdatedPresenter 创建过期检查展示实现。
 func NewOutdatedPresenter(mode listOutputMode, rows []denv.ToolCheckResult, useColor bool) ToolPresenter {
 	return outdatedPresenter{
 		mode:     mode,
@@ -36,6 +38,7 @@ type listPresenter struct {
 	items []denv.ToolListItem
 }
 
+// Render 按模式分发到不同输出策略。
 func (p listPresenter) Render(out io.Writer) error {
 	switch p.mode {
 	case listOutputJSON:
@@ -47,6 +50,7 @@ func (p listPresenter) Render(out io.Writer) error {
 	}
 }
 
+// renderJSON 输出 JSON 结构。
 func (p listPresenter) renderJSON(out io.Writer) error {
 	payload := make([]map[string]any, 0, len(p.items))
 	for _, item := range p.items {
@@ -71,6 +75,7 @@ func (p listPresenter) renderJSON(out io.Writer) error {
 	return err
 }
 
+// renderPlain 输出纯文本（或行内附加字段）。
 func (p listPresenter) renderPlain(out io.Writer) error {
 	for _, item := range p.items {
 		name := item.DisplayName
@@ -102,6 +107,7 @@ func (p listPresenter) renderPlain(out io.Writer) error {
 	return nil
 }
 
+// itemLineSuffix 负责拼装单行后缀（版本/路径）。
 func (p listPresenter) itemLineSuffix(item denv.ToolListItem) string {
 	suffixParts := make([]string, 0, 2)
 	if p.opts.showVersion {
@@ -133,6 +139,7 @@ func (p listPresenter) itemLineSuffix(item denv.ToolListItem) string {
 	return strings.Join(suffixParts, " ")
 }
 
+// renderTable 输出表格文本。
 func (p listPresenter) renderTable(out io.Writer) error {
 	header := "TOOL\t"
 	if p.opts.showVersion {
@@ -178,6 +185,7 @@ type outdatedPresenter struct {
 	useColor bool
 }
 
+// Render 按过期状态输出 JSON/表格/文本。
 func (p outdatedPresenter) Render(out io.Writer) error {
 	switch p.mode {
 	case listOutputJSON:
@@ -189,6 +197,7 @@ func (p outdatedPresenter) Render(out io.Writer) error {
 	}
 }
 
+// renderPlain 输出过期工具状态（带可读提示）。
 func (p outdatedPresenter) renderPlain(out io.Writer) error {
 	for _, row := range p.rows {
 		line := renderOutdatedLine(row, p.useColor)
@@ -199,6 +208,7 @@ func (p outdatedPresenter) renderPlain(out io.Writer) error {
 	return nil
 }
 
+// renderJSON 输出过期检查 JSON 结果。
 func (p outdatedPresenter) renderJSON(out io.Writer) error {
 	payload := make([]map[string]any, 0, len(p.rows))
 	for _, row := range p.rows {
@@ -226,6 +236,7 @@ func (p outdatedPresenter) renderJSON(out io.Writer) error {
 	return err
 }
 
+// renderTable 输出过期状态表格。
 func (p outdatedPresenter) renderTable(out io.Writer) error {
 	tw := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
 	if _, err := fmt.Fprintln(tw, "NAME\tCURRENT\tLATEST\tSTATE"); err != nil {
@@ -252,6 +263,7 @@ func (p outdatedPresenter) renderTable(out io.Writer) error {
 	return tw.Flush()
 }
 
+// renderOutdatedLine 按状态拼装人类可读字符串。
 func renderOutdatedLine(row denv.ToolCheckResult, useColor bool) string {
 	errorSuffix := ""
 	if row.CheckError != nil {

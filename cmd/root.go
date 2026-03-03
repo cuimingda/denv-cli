@@ -6,10 +6,12 @@ import (
 
 const version = "0.0.1"
 
+// NewRootCmd 使用默认 CLIContext 构建入口命令。
 func NewRootCmd() *cobra.Command {
 	return NewRootCmdWithContext(NewCLIContext())
 }
 
+// NewRootCmdWithContext 组装子命令和公共参数，返回根命令。
 func NewRootCmdWithContext(ctx *CLIContext) *cobra.Command {
 	ctx = ensureCLIContext(ctx)
 

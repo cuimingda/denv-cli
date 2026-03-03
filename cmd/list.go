@@ -25,11 +25,13 @@ const (
 	listOutputNoColor listOutputMode = "no-color"
 )
 
+// NewListCmd 使用默认服务构建 list 命令。
 func NewListCmd() *cobra.Command {
 	ctx := NewCLIContext()
 	return NewListCmdWithService(ctx.CatalogContext)
 }
 
+// NewListCmdWithService 对 list 命令进行依赖注入，便于测试。
 func NewListCmdWithService(svc ListCommandService) *cobra.Command {
 	if svc == nil {
 		panic("list command requires a non-nil service implementation")
@@ -77,6 +79,7 @@ func NewListCmdWithService(svc ListCommandService) *cobra.Command {
 	return cmd
 }
 
+// parseListOutput 校验并返回合法的输出模式。
 func parseListOutput(raw string) (listOutputMode, error) {
 	mode := listOutputMode(raw)
 	switch mode {
@@ -92,11 +95,13 @@ type listRenderOptions struct {
 	showPath    bool
 }
 
+// useColorOutput 当前输出是否是文件描述符（可安全上色）。
 func useColorOutput(out io.Writer) bool {
 	_, ok := out.(*os.File)
 	return ok
 }
 
+// colorize 按 ANSI 颜色码包装文本。
 func colorize(color string, text string) string {
 	return color + text + colorReset
 }

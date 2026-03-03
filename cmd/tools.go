@@ -7,20 +7,24 @@ import (
 )
 
 // Command-layer contracts are intentionally narrow, aligned with service ports.
+// ListCommandService 仅包含列表命令所需能力。
 type ListCommandService interface {
 	ListToolItems(opts denv.ListOptions) ([]denv.ToolListItem, error)
 }
 
+// InstallCommandService 仅包含安装命令所需能力。
 type InstallCommandService interface {
 	BuildInstallQueue(force bool) (denv.InstallQueue, error)
 	ExecuteInstallQueue(out io.Writer, queue denv.InstallQueue) error
 }
 
+// OutdatedCommandService 仅包含 outdated 命令所需能力。
 type OutdatedCommandService interface {
 	SupportedTools() []string
 	OutdatedChecks() ([]denv.ToolCheckResult, error)
 }
 
+// UpdateCommandService 仅包含 update 命令所需能力。
 type UpdateCommandService interface {
 	SupportedTools() []string
 	OutdatedUpdatePlan() ([]denv.OutdatedItem, error)
@@ -35,10 +39,12 @@ type CLIContext struct {
 	UpdateContext   denv.UpdateContext
 }
 
+// NewCLIContext 使用默认 Runtime 创建上下文。
 func NewCLIContext() *CLIContext {
 	return NewCLIContextWithRuntime(denv.Runtime{})
 }
 
+// NewCLIContextWithRuntime 注入运行时依赖，主要用于测试。
 func NewCLIContextWithRuntime(rt denv.Runtime) *CLIContext {
 	service := denv.NewService(rt)
 	return &CLIContext{
@@ -50,6 +56,7 @@ func NewCLIContextWithRuntime(rt denv.Runtime) *CLIContext {
 	}
 }
 
+// ensureCLIContext 做空保护，避免调用方未传 context 时 panic。
 func ensureCLIContext(ctx *CLIContext) *CLIContext {
 	if ctx == nil {
 		return NewCLIContext()

@@ -14,20 +14,25 @@ const (
 	VersionValueSemantic
 )
 
+// VersionValue 表示解析后的版本原始文本及其类型。
 type VersionValue struct {
 	Raw  string
 	Kind VersionValueKind
 }
 
+// VersionComparator 定义版本比较策略。
 type VersionComparator interface {
 	Compare(current string, latest string) int
 }
 
+// VersionStrategy 是兼容别名，强调比较策略语义。
 type VersionStrategy = VersionComparator
 
+// SemanticVersionComparator 使用数字段逐位比较。
 type SemanticVersionComparator struct{}
 
 func (SemanticVersionComparator) Compare(current string, latest string) int {
+	// 先分解版本号为整数切片，保证长度对齐后逐段比较
 	currentParts := splitVersionParts(current)
 	latestParts := splitVersionParts(latest)
 
@@ -55,6 +60,7 @@ func (SemanticVersionComparator) Compare(current string, latest string) int {
 	return 0
 }
 
+// DateVersionComparator 用日期语义比较（兼容多种日期格式）。
 type DateVersionComparator struct{}
 
 func (DateVersionComparator) Compare(current string, latest string) int {
@@ -74,14 +80,17 @@ func (DateVersionComparator) Compare(current string, latest string) int {
 	}
 }
 
+// CompareVersions 按自动策略比较当前版本与最新版本。
 func CompareVersions(current string, latest string) int {
 	return CompareVersionsWithStrategy(current, latest, ResolveVersionStrategy(current, latest))
 }
 
+// CompareVersionsWithComparator 用指定比较器比较版本。
 func CompareVersionsWithComparator(current string, latest string, comparator VersionComparator) int {
 	return CompareVersionsWithStrategy(current, latest, comparator)
 }
 
+// CompareVersionsWithStrategy 允许通过策略对象注入比较逻辑。
 func CompareVersionsWithStrategy(current string, latest string, strategy VersionStrategy) int {
 	if strategy == nil {
 		strategy = ResolveVersionStrategy(current, latest)
@@ -89,10 +98,12 @@ func CompareVersionsWithStrategy(current string, latest string, strategy Version
 	return strategy.Compare(current, latest)
 }
 
+// ResolveVersionStrategy 根据两侧版本的解析结果自动选择比较策略。
 func ResolveVersionStrategy(current string, latest string) VersionStrategy {
 	return ResolveVersionStrategyFromValues(ParseVersionValue(current), ParseVersionValue(latest))
 }
 
+// ResolveVersionStrategyFromValues 根据版本分类返回对应比较器。
 func ResolveVersionStrategyFromValues(current VersionValue, latest VersionValue) VersionStrategy {
 	if current.Kind == VersionValueDate && latest.Kind == VersionValueDate {
 		return DateVersionComparator{}
@@ -100,6 +111,7 @@ func ResolveVersionStrategyFromValues(current VersionValue, latest VersionValue)
 	return SemanticVersionComparator{}
 }
 
+// ParseVersionValue 将输入字符串归一化并识别类型。
 func ParseVersionValue(raw string) VersionValue {
 	clean := strings.TrimSpace(raw)
 	value := VersionValue{Raw: clean}
@@ -120,6 +132,7 @@ func ParseVersionValue(raw string) VersionValue {
 	return value
 }
 
+// isSemanticVersionLike 判断字符串是否为由数字分段组成的版本。
 func isSemanticVersionLike(raw string) bool {
 	fields := strings.FieldsFunc(raw, func(r rune) bool {
 		return r == '.' || r == '-' || r == '_'
@@ -142,6 +155,7 @@ func isSemanticVersionLike(raw string) bool {
 	return true
 }
 
+// parseDateVersion 尝试多个日期格式解析。
 func parseDateVersion(v string) (time.Time, error) {
 	formats := []string{
 		"2006-01-02",
@@ -159,12 +173,14 @@ func parseDateVersion(v string) (time.Time, error) {
 	return time.Time{}, errors.New("invalid date format")
 }
 
+// seemsLikeDateVersion 用于判断两端是否都可按日期解析。
 func seemsLikeDateVersion(current string, latest string) bool {
 	_, currentErr := parseDateVersion(current)
 	_, latestErr := parseDateVersion(latest)
 	return currentErr == nil && latestErr == nil
 }
 
+// splitVersionParts 将版本拆成整数切片；非法分段会被忽略。
 func splitVersionParts(version string) []int {
 	fields := strings.FieldsFunc(version, func(r rune) bool {
 		return r == '.' || r == '-' || r == '_'
@@ -187,6 +203,7 @@ func splitVersionParts(version string) []int {
 	return parts
 }
 
+// SplitVersionParts 对外导出版本切分函数。
 func SplitVersionParts(version string) []int {
 	return splitVersionParts(version)
 }

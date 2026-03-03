@@ -2,35 +2,35 @@ package denv
 
 import "io"
 
-// RuntimeContext models runtime-facing capabilities for tool discovery and command/runtime probes.
+// RuntimeContext 负责运行时发现与可用性探测能力。
 type RuntimeContext interface {
 	Discovery
 }
 
-// CatalogContext models tool lifecycle querying and outdated/version listing capabilities.
+// CatalogContext 负责工具清单、版本与过期查询能力。
 type CatalogContext interface {
 	VersionResolver
 	OutdatedManager
 }
 
-// ListContext models only listing behavior for command-style read paths.
+// ListContext 只提供只读列表相关能力。
 type ListContext interface {
 	VersionResolver
 }
 
-// InstallContext models install planning and execution capabilities.
+// InstallContext 负责安装计划构建与安装执行能力。
 type InstallContext interface {
 	InstallPlanner
 	InstallExecutor
 }
 
-// UpdateContext models outdated discovery and executable update orchestration.
+// UpdateContext 负责过期发现与更新执行编排能力。
 type UpdateContext interface {
 	OutdatedManager
 	UpdateManager
 }
 
-// ServiceContext is the full root-capability surface the CLI commands can consume.
+// ServiceContext 聚合 CLI 命令层可消费的完整能力集合。
 type ServiceContext interface {
 	RuntimeContext
 	CatalogContext
@@ -38,7 +38,7 @@ type ServiceContext interface {
 	UpdateContext
 }
 
-// Discovery models read-only environment introspection for supported tools.
+// Discovery 负责环境查询：支持工具清单、安装状态与brew状态检测。
 type Discovery interface {
 	SupportedTools() []string
 	InstallableTools() []string
@@ -54,31 +54,31 @@ type Discovery interface {
 	IsBrewFormulaInstalled(formula string) (bool, error)
 }
 
-// InstallPlanner builds install plans from catalog and runtime state.
+// InstallPlanner 按配置与运行时信息构建安装任务队列/计划。
 type InstallPlanner interface {
 	BuildInstallQueue(force bool) (InstallQueue, error)
 	BuildInstallPlan(toolName string, options BuildInstallPlanOptions) (InstallPlan, error)
 }
 
-// InstallExecutor executes prepared install actions.
+// InstallExecutor 执行构建好的安装队列。
 type InstallExecutor interface {
 	ExecuteInstallQueue(out io.Writer, queue InstallQueue) error
 }
 
-// VersionResolver provides list/outdated view models.
+// VersionResolver 提供列表、版本与过期数据的解析能力。
 type VersionResolver interface {
 	ListToolItems(opts ListOptions) ([]ToolListItem, error)
 	OutdatedItems() ([]OutdatedItem, error)
 }
 
-// OutdatedManager handles scan + filter operations for outdated checks.
+// OutdatedManager 负责过期检测流程与结果过滤。
 type OutdatedManager interface {
 	OutdatedChecks() ([]ToolCheckResult, error)
 	OutdatedItems() ([]OutdatedItem, error)
 	OutdatedUpdatePlan() ([]OutdatedItem, error)
 }
 
-// UpdateManager orchestrates outdated filtering and actual update actions.
+// UpdateManager 负责生成更新候选并执行更新动作。
 type UpdateManager interface {
 	OutdatedUpdatePlan() ([]OutdatedItem, error)
 	UpdateToolWithOutput(out io.Writer, name string) error

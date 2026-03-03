@@ -9,23 +9,28 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewInstallCmd 使用默认上下文创建 install 命令。
 func NewInstallCmd() *cobra.Command {
 	ctx := NewCLIContext()
 	return NewInstallCmdWithService(ctx.InstallContext)
 }
 
+// installCommandService 是命令层对 install context 的薄封装。
 type installCommandService struct {
 	service denv.InstallContext
 }
 
+// BuildInstallQueue 委托给 service 构建安装队列。
 func (s installCommandService) BuildInstallQueue(force bool) (denv.InstallQueue, error) {
 	return s.service.BuildInstallQueue(force)
 }
 
+// ExecuteInstallQueue 委托给 service 执行安装队列。
 func (s installCommandService) ExecuteInstallQueue(out io.Writer, queue denv.InstallQueue) error {
 	return s.service.ExecuteInstallQueue(out, queue)
 }
 
+// NewInstallCmdWithService 组装 install 命令并绑定可替换实现，便于测试与复用。
 func NewInstallCmdWithService(service denv.InstallContext) *cobra.Command {
 	if service == nil {
 		panic("install command requires a non-nil install planner")
@@ -46,6 +51,7 @@ func NewInstallCmdWithService(service denv.InstallContext) *cobra.Command {
 			operationStart := time.Now()
 
 			doingf(cmd, "prepare install plan (force=%t, dry-run=%t)", force, dryRun)
+			// 先计算动作清单，再决定是否执行或仅展示 dry-run 信息
 			installQueue, err := commandService.BuildInstallQueue(force)
 			if err != nil {
 				return err

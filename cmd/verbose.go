@@ -6,6 +6,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// isVerbose 读取当前命令链路上的 verbose 标记，支持：
+// 1) 当前命令本地 flags（用于测试/子命令场景下的显式覆盖）
+// 2) 根命令 PersistentFlags（推荐入口）
+// 3) 根命令普通 Flags（兼容历史入口）
+// 任何一层读取失败都降级到 false，保证默认静默。
 func isVerbose(cmd *cobra.Command) bool {
 	if cmd == nil {
 		return false
@@ -37,6 +42,7 @@ func isVerbose(cmd *cobra.Command) bool {
 	return false
 }
 
+// verbosef 只在 verbose 模式下输出细粒度日志，默认写 stderr，避免污染标准输出。
 func verbosef(cmd *cobra.Command, format string, args ...any) {
 	if !isVerbose(cmd) {
 		return
@@ -45,6 +51,7 @@ func verbosef(cmd *cobra.Command, format string, args ...any) {
 	_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "[verbose] "+format+"\n", args...)
 }
 
+// doingf 始终输出执行进度到标准错误流，适合展示命令主流程状态。
 func doingf(cmd *cobra.Command, format string, args ...any) {
 	_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "[INFO] "+format+"\n", args...)
 }

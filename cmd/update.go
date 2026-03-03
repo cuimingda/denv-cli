@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NewUpdateCmd 使用默认上下文创建 update 命令。
 func NewUpdateCmd() *cobra.Command {
 	ctx := NewCLIContext()
 	return NewUpdateCmdWithService(updateCommandService{
@@ -18,6 +19,7 @@ func NewUpdateCmd() *cobra.Command {
 	})
 }
 
+// NewUpdateCmdWithService 组装 update 命令并绑定服务实现，支持外部测试桩注入。
 func NewUpdateCmdWithService(svc UpdateCommandService) *cobra.Command {
 	if svc == nil {
 		panic("update command requires a non-nil service implementation")
@@ -57,20 +59,24 @@ func NewUpdateCmdWithService(svc UpdateCommandService) *cobra.Command {
 	}
 }
 
+// updateCommandService 是 update 命令的服务抽象。
 type updateCommandService struct {
 	supportedTools       func() []string
 	outdatedUpdatePlan   func() ([]denv.OutdatedItem, error)
 	updateToolWithOutput func(io.Writer, string) error
 }
 
+// SupportedTools 返回可用工具名称列表。
 func (s updateCommandService) SupportedTools() []string {
 	return s.supportedTools()
 }
 
+// OutdatedUpdatePlan 返回待更新工具列表。
 func (s updateCommandService) OutdatedUpdatePlan() ([]denv.OutdatedItem, error) {
 	return s.outdatedUpdatePlan()
 }
 
+// UpdateToolWithOutput 调用服务层执行单工具更新。
 func (s updateCommandService) UpdateToolWithOutput(out io.Writer, name string) error {
 	return s.updateToolWithOutput(out, name)
 }
