@@ -25,8 +25,8 @@ func NewRootCmdWithContext(ctx *CLIContext) *cobra.Command {
 	rootCmd.AddCommand(NewListCmdWithService(ctx.VersionResolver))
 	rootCmd.AddCommand(NewInstallCmdWithService(ctx.InstallPlanner, ctx.InstallExecutor))
 	rootCmd.AddCommand(NewOutdatedCmdWithService(outdatedCommandService{
-		supportedTools:  ctx.Discovery.SupportedTools,
-		outdatedItems:   ctx.VersionResolver.OutdatedItems,
+		supportedTools: ctx.Discovery.SupportedTools,
+		outdatedItems:  ctx.VersionResolver.OutdatedItems,
 	}))
 	rootCmd.AddCommand(NewUpdateCmdWithService(updateCommandService{
 		supportedTools:       ctx.Discovery.SupportedTools,

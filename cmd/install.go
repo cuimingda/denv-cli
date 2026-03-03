@@ -29,14 +29,11 @@ func (s installCommandService) ExecuteInstallQueue(out io.Writer, queue denv.Ins
 }
 
 func NewInstallCmdWithService(planner denv.InstallPlanner, executor denv.InstallExecutor) *cobra.Command {
-	if planner == nil || executor == nil {
-		ctx := ensureCLIContext(NewCLIContext())
-		if planner == nil {
-			planner = ctx.InstallPlanner
-		}
-		if executor == nil {
-			executor = ctx.InstallExecutor
-		}
+	if planner == nil {
+		panic("install command requires a non-nil install planner")
+	}
+	if executor == nil {
+		panic("install command requires a non-nil install executor")
 	}
 
 	longHelp := denv.InstallLongHelp()

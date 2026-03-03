@@ -33,6 +33,7 @@ type CLIContext struct {
 	InstallPlanner  denv.InstallPlanner
 	InstallExecutor denv.InstallExecutor
 	VersionResolver denv.VersionResolver
+	OutdatedManager denv.OutdatedManager
 	UpdateManager   denv.UpdateManager
 }
 
@@ -48,6 +49,7 @@ func NewCLIContextWithRuntime(rt denv.Runtime) *CLIContext {
 		InstallPlanner:  service,
 		InstallExecutor: service,
 		VersionResolver: service,
+		OutdatedManager: service,
 		UpdateManager:   service,
 	}
 }
@@ -55,24 +57,6 @@ func NewCLIContextWithRuntime(rt denv.Runtime) *CLIContext {
 func ensureCLIContext(ctx *CLIContext) *CLIContext {
 	if ctx == nil {
 		return NewCLIContext()
-	}
-	if ctx.service == nil {
-		ctx.service = denv.NewService(denv.Runtime{})
-	}
-	if ctx.Discovery == nil {
-		ctx.Discovery = ctx.service
-	}
-	if ctx.InstallPlanner == nil {
-		ctx.InstallPlanner = ctx.service
-	}
-	if ctx.InstallExecutor == nil {
-		ctx.InstallExecutor = ctx.service
-	}
-	if ctx.VersionResolver == nil {
-		ctx.VersionResolver = ctx.service
-	}
-	if ctx.UpdateManager == nil {
-		ctx.UpdateManager = ctx.service
 	}
 	return ctx
 }

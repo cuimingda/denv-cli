@@ -30,12 +30,12 @@ const (
 
 func NewListCmd() *cobra.Command {
 	ctx := NewCLIContext()
-	return NewListCmdWithService(ensureCLIContext(ctx).VersionResolver)
+	return NewListCmdWithService(ctx.VersionResolver)
 }
 
 func NewListCmdWithService(svc ListCommandService) *cobra.Command {
 	if svc == nil {
-		svc = ensureCLIContext(NewCLIContext()).VersionResolver
+		panic("list command requires a non-nil service implementation")
 	}
 
 	cmd := &cobra.Command{

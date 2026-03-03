@@ -15,18 +15,14 @@ import (
 func NewOutdatedCmd() *cobra.Command {
 	ctx := ensureCLIContext(NewCLIContext())
 	return NewOutdatedCmdWithService(outdatedCommandService{
-		supportedTools:  ctx.Discovery.SupportedTools,
-		outdatedItems:   ctx.VersionResolver.OutdatedItems,
+		supportedTools: ctx.Discovery.SupportedTools,
+		outdatedItems:  ctx.VersionResolver.OutdatedItems,
 	})
 }
 
 func NewOutdatedCmdWithService(svc OutdatedCommandService) *cobra.Command {
 	if svc == nil {
-		ctx := ensureCLIContext(NewCLIContext())
-		svc = outdatedCommandService{
-			supportedTools:  ctx.Discovery.SupportedTools,
-			outdatedItems:   ctx.VersionResolver.OutdatedItems,
-		}
+		panic("outdated command requires a non-nil service implementation")
 	}
 
 	cmd := &cobra.Command{
@@ -91,11 +87,16 @@ func renderOutdatedPlain(out io.Writer, rows []denv.OutdatedItem, useColor bool)
 }
 
 func renderOutdatedLine(row denv.OutdatedItem, useColor bool) string {
+	errorSuffix := ""
+	if row.CheckError != "" {
+		errorSuffix = " (" + row.CheckError + ")"
+	}
+
 	switch row.State {
 	case denv.OutdatedStateInvalidLatest:
-		return row.DisplayName + " invalid latest version"
+		return row.DisplayName + " invalid latest version" + errorSuffix
 	case denv.OutdatedStateInvalidCurrent:
-		return row.DisplayName + " invalid current version"
+		return row.DisplayName + " invalid current version" + errorSuffix
 	case denv.OutdatedStateNotInstalled:
 		return row.DisplayName + " <not installed> " + row.Latest
 	case denv.OutdatedStateUpToDate:
@@ -122,6 +123,9 @@ func renderOutdatedJSON(out io.Writer, rows []denv.OutdatedItem) error {
 			"name":         row.Name,
 			"display_name": row.DisplayName,
 			"state":        row.State,
+		}
+		if row.CheckError != "" {
+			record["check_error"] = row.CheckError
 		}
 		if row.Current != "" {
 			record["current"] = row.Current
@@ -154,7 +158,11 @@ func renderOutdatedTable(out io.Writer, rows []denv.OutdatedItem) error {
 		if latest == "" {
 			latest = "n/a"
 		}
-		if _, err := fmt.Fprintln(tw, strings.Join([]string{row.Name, current, latest, row.State}, "\t")); err != nil {
+		state := string(row.State)
+		if row.CheckError != "" {
+			state = state + " (" + row.CheckError + ")"
+		}
+		if _, err := fmt.Fprintln(tw, strings.Join([]string{row.Name, current, latest, state}, "\t")); err != nil {
 			return err
 		}
 	}

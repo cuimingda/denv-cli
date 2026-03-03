@@ -20,12 +20,7 @@ func NewUpdateCmd() *cobra.Command {
 
 func NewUpdateCmdWithService(svc UpdateCommandService) *cobra.Command {
 	if svc == nil {
-		ctx := ensureCLIContext(NewCLIContext())
-		svc = updateCommandService{
-			supportedTools:       ctx.Discovery.SupportedTools,
-			outdatedUpdatePlan:   ctx.UpdateManager.OutdatedUpdatePlan,
-			updateToolWithOutput: ctx.UpdateManager.UpdateToolWithOutput,
-		}
+		panic("update command requires a non-nil service implementation")
 	}
 
 	return &cobra.Command{
