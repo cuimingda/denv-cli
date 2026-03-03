@@ -1,12 +1,9 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
-	"strings"
-	"text/tabwriter"
 	"time"
 
 	"github.com/cuimingda/denv-cli/internal/denv"
@@ -30,7 +27,7 @@ const (
 
 func NewListCmd() *cobra.Command {
 	ctx := NewCLIContext()
-	return NewListCmdWithService(ctx.VersionResolver)
+	return NewListCmdWithService(ctx.CatalogContext)
 }
 
 func NewListCmdWithService(svc ListCommandService) *cobra.Command {
@@ -65,11 +62,12 @@ func NewListCmdWithService(svc ListCommandService) *cobra.Command {
 			}
 			doingf(cmd, "list scan completed in %s", time.Since(start))
 
-			return renderList(cmd.OutOrStdout(), mode, listRenderOptions{
+			presenter := NewListPresenter(mode, listRenderOptions{
 				colorOutput: colorOutput,
 				showVersion: showVersion,
 				showPath:    showPath,
 			}, items)
+			return presenter.Render(cmd.OutOrStdout())
 		},
 	}
 
@@ -77,12 +75,6 @@ func NewListCmdWithService(svc ListCommandService) *cobra.Command {
 	cmd.Flags().Bool("path", false, "show executable paths for discovered tools")
 	cmd.Flags().String("output", string(listOutputPlain), "output format: plain|json|table|no-color")
 	return cmd
-}
-
-type listRenderOptions struct {
-	colorOutput bool
-	showVersion bool
-	showPath    bool
 }
 
 func parseListOutput(raw string) (listOutputMode, error) {
@@ -94,138 +86,10 @@ func parseListOutput(raw string) (listOutputMode, error) {
 	return "", fmt.Errorf("invalid output: %s", raw)
 }
 
-func renderList(out io.Writer, mode listOutputMode, opts listRenderOptions, items []denv.ToolListItem) error {
-	switch mode {
-	case listOutputJSON:
-		payload := make([]map[string]any, 0, len(items))
-		for _, item := range items {
-			record := map[string]any{
-				"name":            item.Name,
-				"display_name":    item.DisplayName,
-				"installed":       item.Installed,
-				"path":            item.Path,
-				"managed_by_brew": item.ManagedByBrew,
-			}
-			if opts.showVersion {
-				record["version"] = item.Version
-			}
-			payload = append(payload, record)
-		}
-
-		raw, err := json.Marshal(payload)
-		if err != nil {
-			return err
-		}
-		_, err = fmt.Fprintln(out, string(raw))
-		return err
-
-	case listOutputTable:
-		return renderListTable(out, opts, items)
-	default:
-		return renderListPlain(out, opts, items)
-	}
-}
-
-func renderListPlain(out io.Writer, opts listRenderOptions, items []denv.ToolListItem) error {
-	for _, item := range items {
-		name := item.DisplayName
-		if opts.colorOutput {
-			if item.Installed {
-				name = colorize(colorGreen, name)
-			} else {
-				name = colorize(colorRed, name)
-			}
-		}
-
-		if !opts.showVersion && !opts.showPath {
-			_, err := fmt.Fprintln(out, name)
-			if err != nil {
-				return err
-			}
-			continue
-		}
-
-		suffix := itemLineSuffix(item, opts)
-		line := name
-		if suffix != "" {
-			line = fmt.Sprintf("%s %s", name, suffix)
-		}
-		if _, err := fmt.Fprintln(out, line); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func itemLineSuffix(item denv.ToolListItem, opts listRenderOptions) string {
-	suffixParts := make([]string, 0, 2)
-	if opts.showVersion {
-		if item.Installed {
-			suffixParts = append(suffixParts, item.Version)
-		} else {
-			suffixParts = append(suffixParts, "not found")
-		}
-	}
-
-	if opts.showPath {
-		if item.Installed && item.Path != "" {
-			path := item.Path
-			if opts.showVersion {
-				path = fmt.Sprintf("(%s)", path)
-			}
-			if !item.ManagedByBrew && opts.colorOutput {
-				// keep original behavior: path is highlighted only when installed but not managed by brew
-				path = colorize(colorRed, path)
-			}
-			suffixParts = append(suffixParts, path)
-		}
-
-		if !item.Installed && !opts.showVersion {
-			suffixParts = append(suffixParts, "not found")
-		}
-	}
-
-	return strings.Join(suffixParts, " ")
-}
-
-func renderListTable(out io.Writer, opts listRenderOptions, items []denv.ToolListItem) error {
-	header := "TOOL\t"
-	if opts.showVersion {
-		header += "VERSION\t"
-	}
-	if opts.showPath {
-		header += "PATH\t"
-	}
-	header += "MANAGED_BY_BREW"
-
-	tw := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
-	if _, err := fmt.Fprintln(tw, header); err != nil {
-		return err
-	}
-
-	for _, item := range items {
-		row := []string{item.Name}
-		if opts.showVersion {
-			if item.Installed {
-				row = append(row, item.Version)
-			} else {
-				row = append(row, "not found")
-			}
-		}
-		if opts.showPath {
-			if item.Installed {
-				row = append(row, item.Path)
-			} else {
-				row = append(row, "")
-			}
-		}
-		row = append(row, fmt.Sprintf("%t", item.ManagedByBrew))
-		_, err := fmt.Fprintln(tw, strings.Join(row, "\t"))
-		if err != nil {
-			return err
-		}
-	}
-	return tw.Flush()
+type listRenderOptions struct {
+	colorOutput bool
+	showVersion bool
+	showPath    bool
 }
 
 func useColorOutput(out io.Writer) bool {

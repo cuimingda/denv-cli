@@ -29,6 +29,12 @@ type UpdateCommandService interface {
 
 type CLIContext struct {
 	service         *denv.Service
+	RuntimeContext  denv.RuntimeContext
+	CatalogContext  denv.CatalogContext
+	InstallContext  denv.InstallContext
+	UpdateContext   denv.UpdateContext
+
+	// compatibility fields kept for existing command constructors and tests.
 	Discovery       denv.Discovery
 	InstallPlanner  denv.InstallPlanner
 	InstallExecutor denv.InstallExecutor
@@ -45,6 +51,10 @@ func NewCLIContextWithRuntime(rt denv.Runtime) *CLIContext {
 	service := denv.NewService(rt)
 	return &CLIContext{
 		service:         service,
+		RuntimeContext:  service,
+		CatalogContext:  service,
+		InstallContext:  service,
+		UpdateContext:   service,
 		Discovery:       service,
 		InstallPlanner:  service,
 		InstallExecutor: service,

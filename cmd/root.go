@@ -22,16 +22,16 @@ func NewRootCmdWithContext(ctx *CLIContext) *cobra.Command {
 		},
 	}
 
-	rootCmd.AddCommand(NewListCmdWithService(ctx.VersionResolver))
-	rootCmd.AddCommand(NewInstallCmdWithService(ctx.InstallPlanner, ctx.InstallExecutor))
+	rootCmd.AddCommand(NewListCmdWithService(ctx.CatalogContext))
+	rootCmd.AddCommand(NewInstallCmdWithService(ctx.InstallContext, ctx.InstallContext))
 	rootCmd.AddCommand(NewOutdatedCmdWithService(outdatedCommandService{
-		supportedTools: ctx.Discovery.SupportedTools,
-		outdatedChecks: ctx.OutdatedManager.OutdatedChecks,
+		supportedTools: ctx.RuntimeContext.SupportedTools,
+		outdatedChecks: ctx.CatalogContext.OutdatedChecks,
 	}))
 	rootCmd.AddCommand(NewUpdateCmdWithService(updateCommandService{
-		supportedTools:       ctx.Discovery.SupportedTools,
-		outdatedUpdatePlan:   ctx.UpdateManager.OutdatedUpdatePlan,
-		updateToolWithOutput: ctx.UpdateManager.UpdateToolWithOutput,
+		supportedTools:       ctx.RuntimeContext.SupportedTools,
+		outdatedUpdatePlan:   ctx.UpdateContext.OutdatedUpdatePlan,
+		updateToolWithOutput: ctx.UpdateContext.UpdateToolWithOutput,
 	}))
 	rootCmd.PersistentFlags().Bool("verbose", false, "enable verbose output")
 
