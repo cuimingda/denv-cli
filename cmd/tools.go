@@ -20,28 +20,39 @@ var (
 	}
 )
 
-type ToolService interface {
+type ToolRegistry interface {
 	SupportedTools() []string
 	InstallableTools() []string
-	IsCommandAvailable(name string) bool
+	ToolDisplayName(name string) string
+	CompareVersions(current string, latest string) int
+	IsInstallableTool(name string) bool
+}
+
+type ToolService interface {
+	ToolRegistry
+	ToolStateProbe
+	InstallPlanner
+	ExecutionEngine
+	UpdatePolicy
+}
+
+type ToolStateProbe interface {
+	OutdatedItems() ([]denv.OutdatedItem, error)
+	ListToolItems(opts denv.ListOptions) ([]denv.ToolListItem, error)
 	ToolInstallState(name string) (bool, string, bool, error)
-	CommandPath(name string) (string, error)
 	ToolVersion(name string) (string, error)
 	ToolVersionWithPath(name, commandPath string) (string, error)
 	ToolVersionForOutdated(name string) (string, error)
 	ToolLatestVersion(name string) (string, error)
-	ToolDisplayName(name string) string
-	CompareVersions(current string, latest string) int
+	IsCommandAvailable(name string) bool
+	CommandPath(name string) (string, error)
 	IsManagedByHomebrew(path string) bool
-	IsInstallableTool(name string) bool
 	IsBrewInstalled() bool
 	IsBrewFormulaInstalled(formula string) (bool, error)
 	ResolvedBrewBinaryPath(name, formula string) (string, error)
-	OutdatedItems() ([]denv.OutdatedItem, error)
-	ListToolItems(opts denv.ListOptions) ([]denv.ToolListItem, error)
 }
 
-type OperationService interface {
+type InstallPlanner interface {
 	BuildInstallOperations(force bool) ([]denv.InstallOperation, error)
 	BuildInstallOperationsForTool(toolName string, force bool) ([]denv.InstallOperation, error)
 	BuildInstallQueue(force bool) (denv.InstallQueue, error)
@@ -64,8 +75,15 @@ type OperationService interface {
 	BuildTreeInstallQueue(force bool) (denv.InstallQueue, error)
 	BuildGHInstallOperations(force bool) ([]denv.InstallOperation, error)
 	BuildGHInstallQueue(force bool) (denv.InstallQueue, error)
-	RunInstallOperation(out io.Writer, op denv.InstallOperation) error
+}
+
+type UpdatePolicy interface {
+	OutdatedUpdatePlan() ([]denv.OutdatedItem, error)
 	UpdateToolWithOutput(out io.Writer, name string) error
+}
+
+type ExecutionEngine interface {
+	RunInstallOperation(out io.Writer, op denv.InstallOperation) error
 	InstallNodeWithOutput(out io.Writer, force bool) error
 	InstallPHPWithOutput(out io.Writer, force bool) error
 	InstallPython3WithOutput(out io.Writer, force bool) error
@@ -85,14 +103,16 @@ type OperationService interface {
 	InstallFFmpeg() error
 	InstallTree() error
 	InstallGH() error
-	OutdatedUpdatePlan() ([]denv.OutdatedItem, error)
 	ExecuteInstallOperations(out io.Writer, operations []denv.InstallOperation) error
 	ExecuteInstallQueue(out io.Writer, queue denv.InstallQueue) error
 }
 
 type CommandService interface {
-	ToolService
-	OperationService
+	ToolRegistry
+	ToolStateProbe
+	InstallPlanner
+	ExecutionEngine
+	UpdatePolicy
 }
 
 type CLIContext struct {
