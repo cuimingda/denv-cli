@@ -2,22 +2,8 @@ package cmd
 
 import (
 	"io"
-	"os/exec"
 
 	"github.com/cuimingda/denv-cli/internal/denv"
-)
-
-var (
-	executableLookup = exec.LookPath
-	commandRunner    = func(name string, args ...string) ([]byte, error) {
-		return exec.Command(name, args...).CombinedOutput()
-	}
-	commandRunnerWithOutput = func(out io.Writer, name string, args ...string) error {
-		cmd := exec.Command(name, args...)
-		cmd.Stdout = out
-		cmd.Stderr = out
-		return cmd.Run()
-	}
 )
 
 type ToolRegistry interface {
@@ -121,7 +107,7 @@ type CLIContext struct {
 }
 
 func NewCLIContext() *CLIContext {
-	return NewCLIContextWithRuntime(commandRuntime())
+	return NewCLIContextWithRuntime(denv.Runtime{})
 }
 
 func NewCLIContextWithRuntime(rt denv.Runtime) *CLIContext {
@@ -129,13 +115,5 @@ func NewCLIContextWithRuntime(rt denv.Runtime) *CLIContext {
 	return &CLIContext{
 		Runtime: normalized,
 		Service: denv.NewService(normalized),
-	}
-}
-
-func commandRuntime() denv.Runtime {
-	return denv.Runtime{
-		ExecutableLookup:        executableLookup,
-		CommandRunner:           commandRunner,
-		CommandRunnerWithOutput: commandRunnerWithOutput,
 	}
 }

@@ -7,7 +7,7 @@ import (
 )
 
 func denvService() CommandService {
-	service := NewCLIContextWithRuntime(commandRuntime()).Service
+	service := testCommandService()
 	return service
 }
 

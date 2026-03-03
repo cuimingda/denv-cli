@@ -276,7 +276,7 @@ func TestOutdatedCommandUsesColorizedCurrentVersionWhenStale(t *testing.T) {
 		commandRunner = oldRunner
 	}()
 
-	cmd := NewOutdatedCmd()
+	cmd := NewOutdatedCmdWithService(testCommandService())
 	cmd.SetOut(io.Discard)
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("outdated command failed: %v", err)
