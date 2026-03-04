@@ -1,239 +1,68 @@
 # denv CLI
 
-`denv`（Developer Environment）是一个面向 macOS 的开发工具管理命令行工具，当前版本 `0.0.1`。  
+## 这是什么（3 句话）
+- denv 是一个围绕“本机开发工具集合”组织的轻量 CLI：检测、列表、安装与版本更新由同一组命令统一呈现。
+- denv 不做系统级补丁、编译环境托管、以及应用层依赖安装；它只处理固定清单中的工具命令。
+- denv 的边界是“本机可见工具的探测、版本比较、以及执行受控命令流水线”，不负责安装脚本编排外的工作流。
 
-该仓库核心能力基于 `cobra` 的子命令实现，主命令为：
+- [快速入门](./docs/quickstart.md)
+- [架构地图](./docs/architecture-map.md)
+- [不变量集合](./docs/invariants.md)
+- [故障排查](./docs/troubleshooting.md)
 
-- `denv list`
-- `denv install`
-- `denv outdated`
-- `denv update`
-
-> 注意：项目当前导出的行为并未提供 `switch/use` 这类版本切换命令。
-
----
-
-## 运行前提
-
-1. macOS 环境
-2. 建议安装 Homebrew：`brew`
-   - `install` / `update` 会直接调用 Homebrew 命令
-3. 具备可执行文件 `denv`
-   - 文档中的命令为最终打包后的 CLI 用法
-
----
-
-## 全局行为
-
-### 基础调用
-
-```bash
-denv                # 显示帮助
-denv --help         # 显示命令帮助
-denv --version      # 查看版本
-```
-
-### 全局日志
-
-```bash
-denv --verbose <subcommand>
-```
-
-`--verbose` 会在标准错误输出上打印 `[INFO]` 风格的执行进度。
-
----
-
-## 支持工具
-
-`denv list` 会扫描以下工具（顺序固定）：
-
-`php, python3, node, go, npm, curl, gh, git, ffmpeg, tree`
-
-其中 `install` 子命令默认可处理（可安装）：
-
-`php, python3, node, go, curl, gh, git, ffmpeg, tree`
-
-`npm` 仅在 `list/outdated/update` 中参与检测，不会被安装命令直接安装。
-
----
-
-## 命令说明
-
-## `denv list`
-
-列出支持列表，可附加版本、路径和多种输出格式。
-
-```bash
-denv list [--version] [--path] [--output plain|json|table|no-color]
-```
-
-- `--version`：显示已发现工具的当前版本
-- `--path`：显示命令路径
-- `--output`
-  - `plain`（默认）：纯文本
-  - `json`：JSON 数组
-  - `table`：TAB 分隔表格
-  - `no-color`：禁用 ANSI 颜色（即使在终端输出）
-
-示例：
-
+## 你可以直接看到的能力
 ```bash
 denv list
-denv list --version
-denv list --path
-denv list --version --path --output table
-denv list --version --output json
-```
 
-JSON 字段说明：
-
-- `name`：工具名
-- `display_name`：展示名
-- `installed`：是否可发现
-- `version`：版本（仅 `--version`）
-- `path`：可执行路径
-- `managed_by_brew`：是否判定为 Homebrew 管理
-
----
-
-## `denv install`
-
-按固定顺序安装所有可安装工具。
-
-```bash
-denv install [--force] [--dry-run]
-```
-
-- `--dry-run`：只展示待执行计划，不真的执行
-- `--force`：无视“已存在”判断，强制生成安装动作
-
-默认行为：
-
-- 未找到 Homebrew 时直接报错
-- 已安装且非 `--force` 时会跳过
-- `curl` 安装时会在 `brew install curl` 后执行 `brew link curl --force`
-- 所有安装动作都通过标准输出透传 Homebrew 输出
-
-示例：
-
-```bash
 denv install --dry-run
-denv install --force
+
+denv outdated
+
+denv update
 ```
 
-`--dry-run` 典型输出：
+## 三个示例
 
+### 1) 最小示例（仅列出工具）
+```bash
+go run ./cmd/denv list
+```
+输出（按稳定顺序）：`php`、`python3`、`node`...
+
+### 2) 常见用法（json + update）
+```bash
+go run ./cmd/denv list --output json --version
+go run ./cmd/denv outdated --output json
+go run ./cmd/denv install --dry-run
+```
+输出要求：
+- `list --output json` 必须和 `--version` 一致返回每条字段。
+- `outdated --output json` 的每条必须包含 `name/state/current/latest`。
+- `install --dry-run` 只能输出 `Would run: ...`，不可执行命令。
+
+### 3) 失败示例（含错误与退出码）
+```bash
+go run ./cmd/denv list --output invalid
+```
+预期：
 ```text
-Would run: brew install php
-Would run: brew install python3
-Would run: brew install node
-Would run: brew install go
-Would run: brew install curl
-Would run: brew link curl --force
-Would run: brew install gh
-Would run: brew install git
-Would run: brew install ffmpeg
-Would run: brew install tree
+Error: invalid output: invalid
+Usage:
+  denv list [flags]
+...
 ```
+退出码：`1`
 
----
+## 约定
+- 运行 CLI 命令时默认入口是 `cmd/denv/main.go`。
+- 命令组装入口是 `cmd/root.go`。
+- 核心实现分层入口是 `internal/`。
+- 测试锚点优先看命名：
+  - `cmd/`：`*_test.go` 表示 CLI/流程合同。
+  - `internal/`：`*_test.go` 表示核心规则和版本规则。
 
-## `denv outdated`
-
-检查支持工具的“当前版本/最新版本/状态”。
-
-```bash
-denv outdated [--output plain|json|table|no-color]
-```
-
-状态含义：
-
-- `up_to_date`：已是最新
-- `outdated`：需要更新（会显示 `current < latest`）
-- `not_installed`：未安装，显示 `<not installed> latest`
-- `invalid_current`：当前版本解析失败
-- `invalid_latest`：最新版本查询失败
-
-示例：
-
-```bash
-denv outdated
-denv outdated --output table
-denv outdated --output json
-```
-
----
-
-## `denv update`
-
-扫描所有支持工具，仅更新处于 `outdated` 状态的工具：
-
-- `brew` 管理的工具：`brew upgrade <formula>`
-- `npm`：`npm install -g npm@latest`
-
-```bash
-denv update
-```
-
-- 若有可更新项：依次执行更新动作
-- 若没有可更新项：输出 `no updates available`
-- 若某个已安装工具处于版本状态异常（`invalid_current / invalid_latest`）：
-  - 会在该问题修复前中止并返回错误
-
----
-
-## 版本判断逻辑（简要）
-
-`outdated` 使用以下来源计算版本：
-
-- 对大多数工具：`brew info` 获取当前版本/最新稳定版本
-- 对 `npm`：`npm view npm version` 查询最新
-- 版本比较规则：优先按语义版本比较，版本看起来像日期时按日期比较
-
----
-
-## 常见问题
-
-- `Homebrew` 未安装
-  - `list` 仍可用于基础扫描
-  - `install / update` 依赖 `brew`，会返回错误
-- `--verbose` 不会改变命令结果，只显示过程日志
-- 彩色输出只会在 TTY 中出现；`--output no-color` 强制关闭
-
----
-
-## 快速上手清单
-
-```bash
-denv list --version --path
-denv install --dry-run
-denv install
-denv outdated
-denv update
-```
-
-## 可理解性入口与验证
-
-为了保证“读文档+测试名+命令”就能重建系统意图，新增了两份可复用文档：
-
-- [可理解性说明](/Users/cuimingda/Projects/denv-cli/docs/understandability.md)
-- [入口地图索引](/Users/cuimingda/Projects/denv-cli/docs/understandability_entry_index.md)
-
-建议按这两份文档执行 3 轮验证：
-
-1. 冷启动复述：仅凭 README/帮助/测试名称复述“解决什么、不解决什么、3 个最高风险失败模式”。
-2. 入口地图：10 分钟内定位主入口、上下文组装、核心域、外部依赖边界、错误总线。
-3. 不变量显性度：查看测试名映射的“顺序稳定、输出可读、失败可预测”。
-
-如果这三轮通过，通常就具备“人类可解释性”程度。
-
-#### 3) 单元级入口索引（脚本化）
-- 详见：[docs/understandability_entry_index.md](/Users/cuimingda/Projects/denv-cli/docs/understandability_entry_index.md)
-
-#### 4) 不变量显性度
-- 稳定顺序：
-  - `internal/service_test.go`：`TestServiceSupportedToolsAndInstallableOrder`
-- idempotence/幂等：
-  - `cmd/denv`/`internal` 新增用例见 `internal/service_invariants_test.go`
-- 输出格式/数量：
-- `TestListCommandPlainOutputLineCountAndOrder`（`cmd/understandability_invariants_test.go`）
+## 你在本仓库的第一组路径（按理解路径）
+1. `README -> quickstart`
+2. `README -> architecture-map`
+3. `README -> invariants`
+4. `README -> cmd/understandability_invariants_test.go`
