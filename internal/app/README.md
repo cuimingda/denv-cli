@@ -1,13 +1,13 @@
 # internal/app
 
 职责：
-- 协调命令输入到领域流程的执行顺序。
-- 组合领域服务与外部输出，不直接发起系统调用。
+- 作为命令入口与领域服务之间的应用层边界。
+- 协调运行时/领域输入和输出，不直接发起系统调用。
 
 当前实现锚点：
-- 入口与协调：`cmd` 通过 `internal.Service` 调用。
-- 错误与过程日志：`cmd/*`。
+- 入口与协调：`cmd` 通过 `cmd/tools.go` 访问应用服务。
+- 边界收敛：`internal/runtime.go`、`internal/infra/runtime.go`、`internal/compare.go`、`internal/domain/compare.go`、`internal/path_policy.go`。
 
 迁移说明：
-- 现阶段为保持行为兼容，具体实现仍集中在 `internal/`。
-- 后续重构可将 `internal/service.go` 的聚合能力逐步迁移到 `internal/app`。
+- 当前应用层入口仍在 `internal/service.go`（与 `internal/app` 保持兼容）。
+- 后续可继续将 `internal/service.go` 的细粒度实现逐步迁移至 `internal/app` 子模块。

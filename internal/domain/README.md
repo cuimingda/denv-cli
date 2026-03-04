@@ -6,7 +6,7 @@
 
 当前规则锚点：
 - 工具元数据与顺序：`internal/catalog.go`
-- 版本比较策略：`internal/compare.go`
+- 版本比较策略：`internal/domain/compare.go`
 - 流程模型：`internal/workflows.go`
 
 规则约束：

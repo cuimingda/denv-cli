@@ -44,8 +44,8 @@
 
 9. `internal/domain` + `internal/infra`：边界隔离点
    - 目录：`internal/domain`、`internal/infra`
-   - 文件：`internal/domain/domain.go`、`internal/infra/infra.go`、`internal/runtime.go`
-   - 测试：`internal/runtime_test.go::TestNormalizeRuntimeProvidesFallbacks`、`internal/version_test.go::TestResolveVersionStrategySelection`
+   - 文件：`internal/domain/path_policy.go`、`internal/domain/compare.go`、`internal/infra/runtime.go`、`internal/infra/infra.go`
+   - 测试：`internal/infra/infra_test.go::TestNormalizeRuntimeProvidesDefaults`、`internal/version_test.go::TestResolveVersionStrategySelection`
 
 10. `internal`：错误映射到命令退出语义
    - 目录：`cmd/`、`internal/`

@@ -1,19 +1,11 @@
-// Package infra keeps I/O adapters and external command boundaries.
+// Package infra owns external command boundaries.
 package infra
 
-import (
-	denv "github.com/cuimingda/denv-cli/internal"
-	"io"
-)
-
-type Runtime = denv.Runtime
-
-func NormalizeRuntime(rt Runtime) Runtime {
-	return denv.NormalizeRuntime(rt)
-}
+import "io"
 
 func ResolveCommandPath(rt Runtime, name string) (string, error) {
-	return denv.CommandPath(rt, name)
+	rt = NormalizeRuntime(rt)
+	return rt.ExecutableLookup(name)
 }
 
 func RunCommand(rt Runtime, name string, args ...string) ([]byte, error) {
@@ -27,5 +19,6 @@ func RunCommandWithOutput(rt Runtime, out io.Writer, name string, args ...string
 }
 
 func IsCommandAvailable(rt Runtime, name string) bool {
-	return denv.IsCommandAvailable(rt, name)
+	_, err := ResolveCommandPath(rt, name)
+	return err == nil
 }
