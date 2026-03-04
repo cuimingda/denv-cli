@@ -1,7 +1,7 @@
 # 入口索引
 
-- README
-- docs/quickstart.md
-- docs/architecture-map.md
-- docs/invariants.md
-- docs/troubleshooting.md
+- [README](/Users/cuimingda/Projects/denv-cli/README.md)
+- [quickstart](./quickstart.md)
+- [architecture-map](./architecture-map.md)
+- [invariants](./invariants.md)
+- [troubleshooting](./troubleshooting.md)

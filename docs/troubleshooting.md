@@ -1,25 +1,28 @@
 # troubleshooting
 
-## 常见故障与定位路径（按命令级别）
+读完文档后先执行故障复现命令，再按路径-测试定位。
 
-1) `--output` 参数错误
-- 命令：`denv list --output invalid`
-- 预期：返回错误，退出码 1。
-- 位置：`cmd/list.go` → `parseListOutput`。
-- 测试：`cmd/failure_contract_test.go::TestFailureScenario_InvalidInput`
+1) `--output` 非法值
+- 命令：`go run ./cmd/denv list --output invalid`
+- 预期：标准错误包含 `invalid output`，退出码 `1`。
+- 定位：`cmd/list.go` 的 `parseListOutput`，`cmd/cli_contract_test.go`。
 
-2) Homebrew 不存在但需要安装
-- 命令：`denv install`（机器未装 brew）
-- 预期：在构建队列阶段报 `homebrew is not installed`。
-- 位置：`internal/install.go` → `tool.PlanInstallByPolicy`。
-- 测试：`cmd/coverage_gaps_test.go::TestBuildInstallOperationsFailsWithoutHomebrew`
+2) 未知命令
+- 命令：`go run ./cmd/denv does-not-exist`
+- 预期：`unknown command`，退出码 `1`。
+- 定位：`cmd/root.go`（cobra 子命令挂载），`cmd/cli_contract_test.go::TestContract_CLIExitCodeInProcessForUnknownCommand`。
 
-3) 工具版本异常阻断更新
-- 命令：`denv update`（当某已安装工具 current 版本解析失败）
-- 预期：更新计划返回错误，不执行后续更新。
-- 位置：`internal/workflows.go` → `outdatedUpdatePlan`。
-- 测试：`cmd/understandability_invariants_test.go::TestUnderstandabilityInvariant_UpdatePlanFailsFastOnInvalidCurrentVersion`
+3) Homebrew 缺失时安装失败
+- 命令：`go run ./cmd/denv install --dry-run`
+- 预期：在构建安装计划处报 `homebrew is not installed`（仅当本机未安装）。
+- 定位：`internal/install.go`、`internal/runtime.go`、`cmd/failure_contract_test.go::TestFailureScenario_ConfigMissingHomebrew`。
 
-4) 测试锚点失效（行为变化）
-- 命令：`go test ./...`（先只读测试名）
-- 处理：对比本文件中的测试锚点路径，必要时更新 `docs/invariants.md`。
+4) 版本解析异常导致更新停止
+- 命令：`go run ./cmd/denv update`
+- 预期：构建更新计划失败并终止后续更新。
+- 定位：`internal/workflows.go::outdatedUpdatePlan`、`internal/version.go`、`cmd/understandability_invariants_test.go::TestUnderstandabilityInvariant_UpdatePlanFailsFastOnInvalidCurrentVersion`。
+
+5) 失败路径回查命令
+- 命令：`go test ./cmd ./internal -run 'TestFailureScenario_|TestUnderstandabilityInvariant_'`
+- 预期：失败测试名快速指向当前失效锚点。
+- 定位：与 `docs/invariants.md` 的不变量条目逐条对应。

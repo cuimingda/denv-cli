@@ -1,38 +1,63 @@
 # architecture-map
 
-目标：在 12 个要点内把系统边界读出来。
+一页读懂边界与数据流（12 条内），每条都带：目录 / 关键文件 / 关键测试。
 
-1. `cmd/denv/main.go`（cmd）→ `cmd/root.go`（cmd）→ `cmd/understandability_invariants_test.go`（cmd）
-   - 入口边界：`main` 创建根命令并返回统一退出码；测试点看是否存在 `main` 入口。
+1. `cmd`：CLI 入口启动与退出码总线
+   - 目录：`cmd/`
+   - 文件：`cmd/denv/main.go`、`cmd/root.go`
+   - 测试：`cmd/cli_contract_test.go::TestContract_RootHelpHasEntrypointsAndExitZero`
 
-2. `cmd/root.go`（cmd）→ `cmd/list.go` `cmd/install.go` `cmd/outdated.go` `cmd/update.go`（cmd）→ `cmd/tools_test.go`（cmd）
-   - 命令边界：子命令装配与 CLI 参数映射。
+2. `cmd`：子命令组装与参数公开面
+   - 目录：`cmd/`
+   - 文件：`cmd/root.go`、`cmd/list.go`、`cmd/install.go`、`cmd/outdated.go`、`cmd/update.go`
+   - 测试：`cmd/tools_test.go::TestRootHasListCommand`、`cmd/tools_test.go::TestRootHasVerboseFlag`
 
-3. `cmd/tools.go`（cmd）→ `internal/service.go`（internal）→ `cmd/tools_compat_test.go`（cmd）
-   - 依赖边界：命令层只见抽象接口，不直接拼接业务计算。
+3. `cmd`：命令参数解析（等同配置口）
+   - 目录：`cmd/`
+   - 文件：`cmd/list.go::parseListOutput`、`cmd/outdated.go`、`cmd/install.go`
+   - 测试：`cmd/cli_contract_test.go::TestContract_InvalidListOutputArgReturnsNonZeroExitAndUsage`、`cmd/failure_contract_test.go::TestFailureScenario_InvalidInput`
 
-4. `internal/catalog.go`（internal）→ `internal/service.go`（internal）→ `cmd/understandability_invariants_test.go`（cmd）
-   - 模块边界：工具目录与默认清单（支持工具/可安装工具）集中定义。
+4. `cmd`→`internal`：接口边界与依赖注入
+   - 目录：`cmd/`、`internal/`
+   - 文件：`cmd/tools.go`、`internal/ports.go`、`internal/service.go`
+   - 测试：`cmd/tools_test.go::TestNewListCmdWithServicePanicsWhenNilService`、`cmd/tools_test.go::TestNewInstallCmdWithServicePanicsWhenPlannerMissing`
 
-5. `internal/runtime.go`（internal）→ `internal/install.go`（internal）→ `cmd/understandability_invariants_test.go`（cmd）
-   - 外部依赖边界：命令执行与路径查找统一走 `Runtime` 接口。
+5. `internal`：目录清单与稳定顺序来源
+   - 目录：`internal/`
+   - 文件：`internal/catalog.go`、`internal/service.go`
+   - 测试：`internal/service_invariants_test.go::TestListToolItemsOrderMatchesCatalogList`
 
-6. `internal/workflows.go`（internal）→ `internal/version.go`（internal）→ `internal/version_test.go`（internal）
-   - 数据流边界：`list`/`outdated` 先拿支持清单，再逐项采集状态，再产出 `ToolListItem`/`OutdatedItem`。
+6. `internal`：列表/版本查询数据流
+   - 目录：`internal/`
+   - 文件：`internal/workflows.go`、`internal/version.go`
+   - 测试：`cmd/tools_test.go::TestNewListCmdWithVersionOnly`、`cmd/outdated_test.go::TestOutdatedShowsOutdatedTool`
 
-7. `internal/install.go`（internal）→ `internal/operation.go`（internal）→ `cmd/coverage_gaps_test.go`（cmd）
-   - 数据流边界：先规划队列（queue）再执行；失败即中断，避免半更新状态。
+7. `internal`：安装计划与执行分离
+   - 目录：`internal/`
+   - 文件：`internal/install.go`、`internal/operation.go`
+   - 测试：`internal/service_invariants_test.go::TestBuildInstallQueueIsStableAcrossCalls`、`cmd/coverage_gaps_test.go::TestBuildInstallOperationsSkipsInstalledTools`
 
-8. `internal/workflows.go` 的 `outdatedUpdatePlan` → `cmd/outdated.go` → `cmd/update.go`
-   - 错误流边界：版本异常时产生 `OutdatedError`，更新流程阻断。
+8. `internal`：更新计划与更新动作
+   - 目录：`internal/`
+   - 文件：`internal/workflows.go`、`cmd/update.go`
+   - 测试：`cmd/understandability_invariants_test.go::TestUnderstandabilityInvariant_UpdatePlanFailsFastOnInvalidCurrentVersion`、`cmd/tools_test.go::TestUpdateCommandUpdatesOnlyOutdatedTools`
 
-9. `internal/version.go`（internal）→ `cmd/outdated_test.go`（cmd）
-   - 数据流边界：版本源分流（命令/ brew / npm）在版本层统一处理。
+9. `internal/domain` + `internal/infra`：边界隔离点
+   - 目录：`internal/domain`、`internal/infra`
+   - 文件：`internal/domain/domain.go`、`internal/infra/infra.go`、`internal/runtime.go`
+   - 测试：`internal/runtime_test.go::TestNormalizeRuntimeProvidesFallbacks`、`internal/version_test.go::TestResolveVersionStrategySelection`
 
-10. `internal/compare.go`（internal）→ `cmd/outdated_test.go`（cmd）→ `internal/version_test.go`（internal）
-    - 数据流边界：统一版本比较策略保证 `outdated` 语义可复现。
+10. `internal`：错误映射到命令退出语义
+   - 目录：`cmd/`、`internal/`
+   - 文件：`cmd/denv/main.go`、`internal/workflows.go`、`internal/version.go`
+   - 测试：`cmd/cli_contract_test.go::TestContract_InvalidListOutputArgReturnsNonZeroExitAndUsage`、`cmd/failure_contract_test.go::TestFailureScenario_ConfigMissingHomebrew`
 
-11. `internal/path_policy.go`（internal）→ `internal/install.go`（internal）→ `internal/service_test.go`（internal）
-    - 外部依赖边界：Homebrew 路径判断策略在内部可替换、可测试。
+11. `cmd`：输出与可见性策略
+   - 目录：`cmd/`
+   - 文件：`cmd/verbose.go`、`cmd/presenter.go`、`cmd/list.go`
+   - 测试：`cmd/tools_test.go::TestRootVerboseRunsAndLogsInstallDryRun`、`cmd/tools_test.go::TestInstallCommandDryRunShowsOperationsOnly`
 
-12. 错误与输出边界：`cmd/verbose.go`（cmd）→ `cmd/list.go`/`cmd/install.go`/`cmd/update.go`（cmd）；命令反馈边界：`[INFO]` 与 `[verbose]` 分离，stderr 不污染 stdout；测试：`cmd/tools_compat_test.go`、`cmd/cli_contract_test.go`
+12. `internal/path_policy`：外部依赖路径边界
+   - 目录：`internal/`
+   - 文件：`internal/path_policy.go`、`internal/workflows.go`
+   - 测试：`cmd/coverage_gaps_test.go::TestResolvedBrewBinaryPathFallsBackToOptBinPrefix`、`cmd/coverage_gaps_test.go::TestInstallNodeWithOutputSkipsWhenNpmExists`

@@ -1,82 +1,46 @@
 # denv CLI
 
-## 这是什么（3 句话）
-- denv 是一个围绕“本机开发工具集合”组织的轻量 CLI：检测、列表、安装与版本更新由同一组命令统一呈现。
-- denv 不做系统级补丁、编译环境托管、以及应用层依赖安装；它只处理固定清单中的工具命令。
-- denv 的边界是“本机可见工具的探测、版本比较、以及执行受控命令流水线”，不负责安装脚本编排外的工作流。
+## 3句话理解
+- denv 是一个 CLI，统一描述、检测、列表、安装和更新“受支持开发工具”的本机状态与操作。
+- denv 不负责系统级环境管理、外部应用栈（如编译器链或容器平台）安装，也不维护复杂依赖解析。
+- denv 的边界是：只读/写入对 `internal/catalog.go` 与 `internal/` 业务服务的命令编排层，错误统一回退到 CLI 退出码。
 
-- [快速入门](./docs/quickstart.md)
-- [架构地图](./docs/architecture-map.md)
-- [不变量集合](./docs/invariants.md)
-- [故障排查](./docs/troubleshooting.md)
+## 先看这里（导航）
+- [quickstart](./docs/quickstart.md)
+- [architecture-map](./docs/architecture-map.md)
+- [invariants](./docs/invariants.md)
+- [troubleshooting](./docs/troubleshooting.md)
 
-## 你可以直接看到的能力
+## 三个示例（命令+预期）
+
+### 1) 最小示例
 ```bash
-denv list
-
-denv install --dry-run
-
-denv outdated
-
-denv update
+go run ./cmd/denv list
 ```
+输出示例（第一批）：`php`、`python3`、`node`…
 
-## 安装与运行（按身份分离）
-
-### 面向使用者（发布版本）
+### 2) 常见用法
 ```bash
-go install github.com/cuimingda/denv-cli/cmd/denv@latest
-denv --help
+go run ./cmd/denv list --version --path
+go run ./cmd/denv outdated --output json
+go run ./cmd/denv install --dry-run
 ```
+行为锚点：
+- `list --version --path` 走 `cmd/list.go`，产出 `internal/domain` 列表模型；
+- `outdated --output json` 保证 `name/state/current/latest`；
+- `install --dry-run` 仅打印 `Would run:`。
 
-### 面向开发者（本地源码）
+### 3) 失败示例（输出与退出码）
 ```bash
-go install ./cmd/denv
-denv --help
+go run ./cmd/denv list --output invalid
 ```
-
-## 三个示例
-
-### 1) 最小示例（仅列出工具）
-```bash
-denv list
-```
-输出（按稳定顺序）：`php`、`python3`、`node`...
-
-### 2) 常见用法（json + update）
-```bash
-denv list --output json --version
-denv outdated --output json
-denv install --dry-run
-```
-输出要求：
-- `list --output json` 必须和 `--version` 一致返回每条字段。
-- `outdated --output json` 的每条必须包含 `name/state/current/latest`。
-- `install --dry-run` 只能输出 `Would run: ...`，不可执行命令。
-
-### 3) 失败示例（含错误与退出码）
-```bash
-denv list --output invalid
-```
-预期：
+输出关键行（示例）：
 ```text
 Error: invalid output: invalid
 Usage:
   denv list [flags]
-...
 ```
 退出码：`1`
 
-## 约定
-- 运行 CLI 命令时默认入口是 `cmd/denv/main.go`。
-- 命令组装入口是 `cmd/root.go`。
-- 核心实现分层入口是 `internal/`。
-- 测试锚点优先看命名：
-  - `cmd/`：`*_test.go` 表示 CLI/流程合同。
-  - `internal/`：`*_test.go` 表示核心规则和版本规则。
-
-## 你在本仓库的第一组路径（按理解路径）
-1. `README -> quickstart`
-2. `README -> architecture-map`
-3. `README -> invariants`
-4. `README -> cmd/understandability_invariants_test.go`
+## 读者下一步
+先按 `quickstart` 完成首次运行，再对照 `architecture-map` 找到每条命令的文件入口。
