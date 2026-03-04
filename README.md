@@ -21,19 +21,33 @@ denv outdated
 denv update
 ```
 
+## 安装与运行（按身份分离）
+
+### 面向使用者（发布版本）
+```bash
+go install github.com/cuimingda/denv-cli/cmd/denv@latest
+denv --help
+```
+
+### 面向开发者（本地源码）
+```bash
+go install ./cmd/denv
+denv --help
+```
+
 ## 三个示例
 
 ### 1) 最小示例（仅列出工具）
 ```bash
-go run ./cmd/denv list
+denv list
 ```
 输出（按稳定顺序）：`php`、`python3`、`node`...
 
 ### 2) 常见用法（json + update）
 ```bash
-go run ./cmd/denv list --output json --version
-go run ./cmd/denv outdated --output json
-go run ./cmd/denv install --dry-run
+denv list --output json --version
+denv outdated --output json
+denv install --dry-run
 ```
 输出要求：
 - `list --output json` 必须和 `--version` 一致返回每条字段。
@@ -42,7 +56,7 @@ go run ./cmd/denv install --dry-run
 
 ### 3) 失败示例（含错误与退出码）
 ```bash
-go run ./cmd/denv list --output invalid
+denv list --output invalid
 ```
 预期：
 ```text
