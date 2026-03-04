@@ -212,52 +212,20 @@ denv outdated
 denv update
 ```
 
-## 可理解性导览（用于 10 分钟入口图）
+## 可理解性入口与验证
 
-### 一眼定位核心职责
+为了保证“读文档+测试名+命令”就能重建系统意图，新增了两份可复用文档：
 
-- 本项目解决什么：在 macOS 上管理一组开发者工具（list/install/outdated/update）的安装与状态判断。
-- 不解决什么：
-  - 不做版本回滚（只做当前/最新判断及更新，不做降级）。
-  - 不做多平台适配（默认针对 macOS + Homebrew 流程）。
-  - 不做持久化状态存储（所有状态来自系统命令探测）。
+- [可理解性说明](/Users/cuimingda/Projects/denv-cli/docs/understandability.md)
+- [入口地图索引](/Users/cuimingda/Projects/denv-cli/docs/understandability_entry_index.md)
 
-### 入口地图（可定位文件）
+建议按这两份文档执行 3 轮验证：
 
-1. `cmd/denv/main.go`：程序入口，执行 `cmd.NewRootCmd()`，统一失败返回码 `1`。
-2. `cmd/root.go`：根命令装配（`list/install/outdated/update`）与 `--verbose`。
-3. `cmd/tools.go`：命令层端口定义（`ListCommandService` 等）和 `CLIContext` 组装。
-4. `cmd/list.go`：参数解析、日志埋点、调用列表服务。
-5. `cmd/install.go`：安装命令参数、dry-run、执行委托。
-6. `cmd/outdated.go`：过期状态读取、状态聚合展示。
-7. `cmd/update.go`：更新计划与执行委托。
-8. `cmd/presenter.go`：输出层（plain/json/table/no-color）。
-9. `cmd/verbose.go`：日志总线（`doingf/verbosef`）。
-10. `internal/service.go`：核心门面（Service），将 `discovery/version/install/outdated/update` 子能力组装到统一 API。
-11. `internal/install.go`：安装编排与执行（安装计划、队列、操作执行）。
-12. `internal/workflows.go`：list/outdated 工作流核心数据模型（tool item / check state / update plan）。
-13. `internal/catalog.go`：工具元数据与安装策略（支持边界、顺序、命令映射）。
-14. `internal/version.go`：版本解析与来源（brew/npm）处理。
-15. `internal/runtime.go` + `internal/path_policy.go`：系统依赖边界（命令执行、路径归类）。
+1. 冷启动复述：仅凭 README/帮助/测试名称复述“解决什么、不解决什么、3 个最高风险失败模式”。
+2. 入口地图：10 分钟内定位主入口、上下文组装、核心域、外部依赖边界、错误总线。
+3. 不变量显性度：查看测试名映射的“顺序稳定、输出可读、失败可预测”。
 
-### 错误总线
-
-- 命令层约定：所有子命令通过 `RunE` 返回 `error`，由 Cobra 打印；`main.go` 统一 `os.Exit(1)`。
-- 结构化错误：`internal/workflows.go` 的 `OutdatedError{ToolName,State}` 作为更新阶段阻断信号。
-- 退出码策略：当前仅 0/1 两级（成功/失败），未使用子错误码。
-
-### 可复述性验证（建议流程）
-
-#### 1) 冷启动复述测试
-- 先只看 `README.md` 和 `*_test.go` 名称。
-- 再用以下反例快速验收：
-  - `denv outdated`：列出未安装工具时应输出 `<not installed> latest`。
-  - `denv install --dry-run`：输出是否是稳定且完整的操作计划。
-  - `denv install`（缺少 brew）：应返回失败，而不是静默成功。
-
-#### 2) 入口地图测试
-- 10 分钟内应能从上述文件直接找到：入口、配置/目录、核心域、外部依赖边界、错误总线。
-- 若找不到，优先从当前文档补齐映射，再补测试锚点。
+如果这三轮通过，通常就具备“人类可解释性”程度。
 
 #### 3) 单元级入口索引（脚本化）
 - 详见：[docs/understandability_entry_index.md](/Users/cuimingda/Projects/denv-cli/docs/understandability_entry_index.md)

@@ -1,63 +1,71 @@
 # denv 可理解性地图与验证清单
 
-目标：让人不阅读实现全量代码，也能定位系统意图、边界和风险。
+目标：保证你不读实现全量，也能在有限时间内重建系统边界。通过文档 + 测试名 + `--help`，找到“意图、边界、风险、可预期行为”。
 
-## 核心意图
+## 1) 冷启动复述测试
 
-- 目标用户：开发者环境初始化脚本或日常工具维护。
-- 解决问题：统一检测、安装、检查与更新常用工具，输出可读/脚本友好格式。
-- 当前边界：
-  - 仅支持 macOS + Homebrew 流程。
-  - 仅在检测到不一致或异常时返回错误退出；不做自动修复除更新/安装外的额外变更。
+只看以下三类输入进行一次复述：
 
-## 文件级地图（关键路径）
+- `README.md`
+- `go run ./cmd/denv --help`
+- 测试目录与测试名（不用源码）
 
-### 命令入口
-- `cmd/denv/main.go`：`main` 只做 root 命令执行与错误退出。
-- `cmd/root.go`：`NewRootCmd` 聚合根命令与子命令，声明 `--verbose`。
-- `cmd/list.go` / `cmd/install.go` / `cmd/outdated.go` / `cmd/update.go`：每个子命令都只做参数到服务的映射。
-- `cmd/presenter.go`：输出层，控制 `plain/json/table/no-color`。
-- `cmd/verbose.go`：日志总线，保证命令日志行为集中在可定位位置。
+应能稳定回答：
 
-### 内部领域边界
-- `internal/catalog.go`：工具模型与 install policy（`ToolDefinition`、`Tool`、`toolCatalog`）。
-- `internal/workflows.go`：`list` 与 `outdated` 的流程模型（`ToolListItem`、`ToolCheckResult`、`OutdatedItem`）。
-- `internal/install.go`：安装编排，含 registry、plan/queue、执行接口。
-- `internal/version.go`：版本解析与版本来源（brew/npm）。
-- `internal/runtime.go` / `internal/path_policy.go`：外部 IO 与路径策略隔离。
-- `internal/service.go`：Facade 门面，统一服务边界，隔离命令层与领域行为。
+1. 这套 CLI 解决什么问题？
+2. 明确不解决什么问题？
+3. 最危险的 3 个失败模式？
 
-### 错误与退出语义
-- 命令层：`RunE` 返回错误给 `cobra`，`main.go` 统一 `os.Exit(1)`。
-- 关键结构化错误：`internal/workflows.go` 的 `OutdatedError`（`ToolName` + `State`）。
-- 兼容/边界错误：`unsupported tool`、`homebrew is not installed`、`tool ... is not installed` 之类字符串错误。
+如果你只能凭猜测回答“没看版本/边界”，说明可理解性不足。
 
-## 风险边界（显式追踪）
+建议复述失败模式：
 
-1. `Homebrew` 依赖失效：`install/update` 命令对 brew 的可用性与输出格式敏感。
-2. 版本抽取假设：`RegexVersionParser` 与 brew 数据源可能对少见工具/输出格式失效。
-3. 输出策略分叉：`--verbose` 与 `--output` 同时存在时行为叠加需要按文档理解（目前日志始终写 `stderr`）。
+- 没有 `brew` 时，`install/update` 必须可预见失败，不应静默。
+- `brew`/工具版本输出格式异常时，`outdated`/`update` 会产生可定位错误（包含工具名和状态）。
+- `--output`、`--verbose` 并行时输出通道与语义应清楚（stdout 业务输出、stderr 日志）。
 
-## 不变量锚点与测试映射
+## 2) 入口地图测试（10 分钟）
 
-- 顺序稳定（列表/安装顺序）：
-  - `internal/service_test.go:TestServiceSupportedToolsAndInstallableOrder`
+目标单位顺序（每一项必须能指向文件/模块/命令）：
+
+1. 主入口
+2. 配置与命令目录（工具列表/安装规则）
+3. 核心域行为（list/outdated/install/update 的边界）
+4. 外部依赖边界（命令执行、路径策略）
+5. 错误总线（错误类型、错误传播、退出码）
+
+验收方式：
+
+- `go run ./cmd/denv --help` 能看到主命令集合。
+- `go run ./cmd/denv list --version --path` 能确认 list 流程。
+- `go run ./cmd/denv outdated --output json` 能确认检查流程。
+- `go run ./cmd/denv install --dry-run` 能确认安装计划流程。
+
+对应文件索引见：
+
+- [docs/understandability_entry_index.md](/Users/cuimingda/Projects/denv-cli/docs/understandability_entry_index.md)
+
+## 3) 不变量显性度测试（必须有测试锚点）
+
+每个关键不变量都要有可读测试名：
+
+- 顺序稳定：列表顺序、安装顺序不变。
+  - `internal/service_invariants_test.go:TestListToolItemsOrderMatchesCatalogList`
   - `internal/service_invariants_test.go:TestBuildInstallQueueIsStableAcrossCalls`
-- 幂等（同一输入重复构建一致）：
-  - `internal/service_invariants_test.go:TestBuildInstallQueueIsStableAcrossCalls`
-- 输出可预期（数量/顺序/字段完整）：
-  - `cmd/understandability_invariants_test.go:TestListCommandPlainOutputLineCountAndOrder`
+- 输出可预测：JSON/plain 模式语义一致、可脚本化。
+  - `cmd/understandability_invariants_test.go:TestUnderstandabilityInvariant_ListOutputOrderAndJSONSchemaStable`
+  - `cmd/understandability_invariants_test.go:TestUnderstandabilityInvariant_OutdatedJSONContract`
+- 风险可阻断：检测异常不能盲目更新。
+  - `cmd/understandability_invariants_test.go:TestUnderstandabilityInvariant_UpdatePlanFailsFastOnInvalidCurrentVersion`
 
-## 验证口径（建议跑一遍）
+## 可执行最小核验
 
-1. 冷启动复述：只看 `README.md` + 测试名，不看实现源码，复述「目标、非目标、失败模式」。
-2. 入口图定位：10 分钟内在上述文件中找到入口、外部依赖、错误总线。
-3. 抽样反例：
-   - `go run ./cmd/denv install --dry-run`
-   - `HOME=false go run ./cmd/denv install`（或移除 brew）验证失败路径
-   - 在无 tool PATH 的环境中观察 `go run ./cmd/denv outdated` 输出是否仍稳定
+```bash
+go run ./cmd/denv --help
+go run ./cmd/denv list --output table
+go run ./cmd/denv outdated --output json
+go run ./cmd/denv install --dry-run
 
-## 入口地图执行索引
-
-更细颗粒度的“文件→核心函数→反例命令”清单见：
-[docs/understandability_entry_index.md](/Users/cuimingda/Projects/denv-cli/docs/understandability_entry_index.md)
+go test ./cmd -run 'TestUnderstandabilityInvariant_' -count=1
+go test ./internal -run 'TestBuildInstallQueueIsStableAcrossCalls|TestListToolItemsOrderMatchesCatalogList' -count=1
+```
