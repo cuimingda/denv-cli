@@ -1,3 +1,4 @@
+// cmd/presenter.go 负责 list/outdated 的输出呈现层，统一 JSON/plain/table 等格式化结果。
 package cmd
 
 import (

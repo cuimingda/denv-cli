@@ -1,3 +1,4 @@
+// cmd/denv/main.go denv 可执行程序入口，负责初始化根命令并按退出码反馈执行结果。
 package main
 
 import (

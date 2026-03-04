@@ -1,3 +1,4 @@
+// cmd/tools_compat_test.go 提供兼容层测试函数，便于在测试中以旧 API 方式访问服务能力。
 package cmd
 
 import (

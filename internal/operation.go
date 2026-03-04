@@ -1,3 +1,4 @@
+// internal/operation.go 定义命令规格与安装动作模型（Operation/Queue/Plan），并提供构造、转换和基本操作能力。
 package denv
 
 import (

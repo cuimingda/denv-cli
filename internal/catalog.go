@@ -1,3 +1,4 @@
+// internal/catalog.go 管理工具与包的元数据目录、安装策略和生命周期解析，是“我支持什么工具”的中心源。
 package denv
 
 import (

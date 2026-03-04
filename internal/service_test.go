@@ -1,3 +1,4 @@
+// internal/service_test.go 验证 Service 聚合层的生命周期、代理转发、异常行为与核心兼容性。
 package denv
 
 import (

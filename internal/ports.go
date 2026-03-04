@@ -1,3 +1,4 @@
+// internal/ports.go 声明服务与命令层之间的接口端口，定义运行时/目录/安装/更新等能力边界。
 package denv
 
 import "io"

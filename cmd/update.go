@@ -1,3 +1,4 @@
+// cmd/update.go 实现 update 命令：基于过期计划执行更新、支持外部服务注入和进度输出。
 package cmd
 
 import (

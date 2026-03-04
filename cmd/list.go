@@ -1,3 +1,4 @@
+// cmd/list.go 实现 list 命令，处理参数与输出模式，并将结果委派给 presenter 渲染。
 package cmd
 
 import (

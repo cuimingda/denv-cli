@@ -1,3 +1,4 @@
+// internal/version.go 实现工具版本能力：命令版本提取、brew/npm 最新版本来源、版本文本解析与抽取接口。
 package denv
 
 import (

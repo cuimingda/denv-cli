@@ -1,3 +1,4 @@
+// internal/runtime.go 定义执行环境依赖点 Runtime 与默认实现兜底，屏蔽命令执行/路径查找在不同场景下的差异。
 package denv
 
 import (

@@ -1,3 +1,4 @@
+// internal/install.go 定义工具安装领域的核心流程：安装计划构建、安装策略、执行入口与命令驱动注册。
 package denv
 
 import (

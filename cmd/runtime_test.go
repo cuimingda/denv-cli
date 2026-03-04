@@ -1,3 +1,4 @@
+// cmd/runtime_test.go 提供命令层测试可复用的 Runtime 伪造对象与测试服务创建入口。
 package cmd
 
 import (

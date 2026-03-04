@@ -1,3 +1,4 @@
+// cmd/coverage_gaps_test.go 覆盖命令/安装流程未被主测试覆盖的边界场景，提高关键分支置信度。
 package cmd
 
 import (

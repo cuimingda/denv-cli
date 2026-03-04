@@ -1,3 +1,4 @@
+// cmd/verbose.go 提供统一的 verbose 日志打印与开关判定，统一命令执行过程中的信息输出行为。
 package cmd
 
 import (

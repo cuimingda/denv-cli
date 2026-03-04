@@ -1,3 +1,4 @@
+// cmd/tools_test.go 覆盖 CLI 命令与上下文相关行为，包括命令构建、参数处理与关键用户场景。
 package cmd
 
 import (

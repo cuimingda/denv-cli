@@ -1,3 +1,4 @@
+// internal/workflows.go 封装 list/outdated 两条主工作流所需的领域数据结构与计算入口。
 package denv
 
 import "fmt"

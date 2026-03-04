@@ -1,3 +1,4 @@
+// cmd/root.go 定义 CLI 根命令、版本信息和全局子命令注册，是命令树的组装入口。
 package cmd
 
 import (

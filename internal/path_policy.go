@@ -1,3 +1,4 @@
+// internal/path_policy.go 定义路径判定策略接口及默认实现，用于判断命令是否由 Homebrew 管理及推断默认路径。
 package denv
 
 import "strings"

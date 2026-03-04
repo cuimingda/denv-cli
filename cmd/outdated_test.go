@@ -1,3 +1,4 @@
+// cmd/outdated_test.go 覆盖版本比较与 outdated 命令链路中的关键兼容、边界与输出行为。
 package cmd
 
 import (

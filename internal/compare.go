@@ -1,3 +1,4 @@
+// internal/compare.go 提供版本值解析与版本比较能力，统一处理语义版本、日期版本等不同语义的比较。
 package denv
 
 import (

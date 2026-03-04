@@ -1,3 +1,4 @@
+// internal/version_test.go 覆盖版本解析与版本策略的单元用例，保证版本提取与比较逻辑在边界输入下稳定。
 package denv
 
 import (

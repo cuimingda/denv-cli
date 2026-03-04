@@ -1,3 +1,4 @@
+// internal/service.go 提供统一的 Service 门面，组装子服务并对外暴露命令与业务能力的稳定入口。
 package denv
 
 import "io"

@@ -1,3 +1,4 @@
+// cmd/outdated.go 实现 outdated 命令：扫描工具过期状态并以可选格式展示检查结果。
 package cmd
 
 import (

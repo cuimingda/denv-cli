@@ -1,3 +1,4 @@
+// cmd/denv/build_test.go 验证 go build 相关行为与约束，用于保护构建目标与项目结构正确性。
 package main
 
 import (

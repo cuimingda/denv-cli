@@ -1,3 +1,4 @@
+// cmd/tools.go 定义 CLI 层服务接口与上下文组装，屏蔽命令与底层 Service 的直接耦合并提供默认依赖注入。
 package cmd
 
 import (

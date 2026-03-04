@@ -1,3 +1,4 @@
+// cmd/install.go 实现 install 命令：解析参数、构建安装队列、支持 dry-run，并委托服务层执行实际安装动作。
 package cmd
 
 import (
