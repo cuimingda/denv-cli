@@ -8,6 +8,7 @@
 - 工具元数据与顺序：`internal/catalog.go`
 - 版本比较策略：`internal/domain/compare.go`
 - 流程模型：`internal/workflows.go`
+- 领域服务编排：`internal/domain/discovery.go`、`internal/domain/version.go`、`internal/domain/install.go`、`internal/domain/outdated.go`、`internal/domain/update.go`、`internal/domain/helpers.go`
 
 规则约束：
 - 禁止直接调用 `exec.Command`。

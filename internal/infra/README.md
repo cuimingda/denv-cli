@@ -5,6 +5,7 @@
 
 当前实现锚点：
 - 运行时抽象：`internal/infra/runtime.go`、`internal/infra/infra.go`
+- 通用基础设施封装：`internal/infra/runtime_adapter.go`、`internal/infra/catalog_manager.go`
 - 外部调用与安装：`internal/install.go`
 - 版本采集：`internal/version.go`
 
