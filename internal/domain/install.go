@@ -17,8 +17,8 @@ type ServiceInstallPlannerDeps[TRuntime any, TCatalog any, TRegistry any, TInsta
 type ServiceInstallPlanner[TRuntime any, TCatalog any, TPathPolicy any, TRegistry any, TInstallQueue any, TInstallPlan any, TInstallPlanOptions any, TInstallOperation any] struct {
 	runtimeAdapter *infra.RuntimeAdapter[TRuntime]
 	catalogManager *infra.CatalogManager[TCatalog, TPathPolicy]
-	registry      TRegistry
-	deps          ServiceInstallPlannerDeps[TRuntime, TCatalog, TRegistry, TInstallQueue, TInstallPlan, TInstallPlanOptions, TInstallOperation]
+	registry       TRegistry
+	deps           ServiceInstallPlannerDeps[TRuntime, TCatalog, TRegistry, TInstallQueue, TInstallPlan, TInstallPlanOptions, TInstallOperation]
 }
 
 func NewServiceInstallPlanner[TRuntime any, TCatalog any, TPathPolicy any, TRegistry any, TInstallQueue any, TInstallPlan any, TInstallPlanOptions any, TInstallOperation any](
@@ -30,8 +30,8 @@ func NewServiceInstallPlanner[TRuntime any, TCatalog any, TPathPolicy any, TRegi
 	return &ServiceInstallPlanner[TRuntime, TCatalog, TPathPolicy, TRegistry, TInstallQueue, TInstallPlan, TInstallPlanOptions, TInstallOperation]{
 		runtimeAdapter: runtimeAdapter,
 		catalogManager: catalogManager,
-		registry:      registry,
-		deps:          deps,
+		registry:       registry,
+		deps:           deps,
 	}
 }
 
@@ -89,8 +89,8 @@ func (p *ServiceInstallPlanner[TRuntime, TCatalog, TPathPolicy, TRegistry, TInst
 }
 
 type ServiceInstallExecutorDeps[TRuntime any, TInstallOperation any, TInstallQueue any] struct {
-	RunInstallOperation  func(TRuntime, io.Writer, TInstallOperation) error
-	InstallQueueToOps    func(TInstallQueue) []TInstallOperation
+	RunInstallOperation func(TRuntime, io.Writer, TInstallOperation) error
+	InstallQueueToOps   func(TInstallQueue) []TInstallOperation
 }
 
 type ServiceInstallExecutor[TRuntime any, TInstallOperation any, TInstallQueue any] struct {
@@ -135,4 +135,3 @@ func (e *ServiceInstallExecutor[TRuntime, TInstallOperation, TInstallQueue]) Exe
 	}
 	return e.ExecuteInstallOperations(out, e.deps.InstallQueueToOps(queue))
 }
-

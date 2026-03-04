@@ -13,7 +13,7 @@ type ServiceOutdatedServiceDeps[TRuntime any, TCatalog any, TPathPolicy any, TTo
 type ServiceOutdatedService[TRuntime any, TCatalog any, TPathPolicy any, TToolCheckResult any, TOutdatedItem any] struct {
 	runtimeAdapter *infra.RuntimeAdapter[TRuntime]
 	catalogManager *infra.CatalogManager[TCatalog, TPathPolicy]
-	deps          ServiceOutdatedServiceDeps[TRuntime, TCatalog, TPathPolicy, TToolCheckResult, TOutdatedItem]
+	deps           ServiceOutdatedServiceDeps[TRuntime, TCatalog, TPathPolicy, TToolCheckResult, TOutdatedItem]
 }
 
 func NewServiceOutdatedService[TRuntime any, TCatalog any, TPathPolicy any, TToolCheckResult any, TOutdatedItem any](
@@ -24,7 +24,7 @@ func NewServiceOutdatedService[TRuntime any, TCatalog any, TPathPolicy any, TToo
 	return &ServiceOutdatedService[TRuntime, TCatalog, TPathPolicy, TToolCheckResult, TOutdatedItem]{
 		runtimeAdapter: runtimeAdapter,
 		catalogManager: catalogManager,
-		deps:          deps,
+		deps:           deps,
 	}
 }
 
@@ -63,4 +63,3 @@ func (o *ServiceOutdatedService[TRuntime, TCatalog, TPathPolicy, TToolCheckResul
 func (o *ServiceOutdatedService[TRuntime, TCatalog, TPathPolicy, TToolCheckResult, TOutdatedItem]) OutdatedUpdatePlan() ([]TOutdatedItem, error) {
 	return o.deps.OutdatedUpdatePlan(o.runtimeRef(), o.catalogRef(), o.pathPolicyRef())
 }
-

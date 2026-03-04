@@ -7,6 +7,9 @@
 
 ## 先看这里（导航）
 - [quickstart](./docs/quickstart.md)
+- [CONTRIBUTING](./CONTRIBUTING.md)
+- [project-overview](./docs/project-overview.md)
+- [ADR 列表](./docs/adr)
 - [architecture-map](./docs/architecture-map.md)
 - [invariants](./docs/invariants.md)
 - [troubleshooting](./docs/troubleshooting.md)

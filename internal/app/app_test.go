@@ -30,4 +30,3 @@ func TestNewService_ComposesDomainWorkflow(t *testing.T) {
 		t.Fatalf("unexpected item count: got %d, want %d", len(items), len(svc.SupportedTools()))
 	}
 }
-

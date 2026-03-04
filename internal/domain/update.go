@@ -47,4 +47,3 @@ func (u *ServiceUpdateService[TRuntime, TCatalog, TPathPolicy]) catalogRef() TCa
 func (u *ServiceUpdateService[TRuntime, TCatalog, TPathPolicy]) UpdateToolWithOutput(out io.Writer, name string) error {
 	return u.deps.UpdateToolWithOutput(u.runtimeRef(), u.catalogRef(), out, name)
 }
-

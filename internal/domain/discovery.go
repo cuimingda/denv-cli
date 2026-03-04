@@ -5,24 +5,24 @@ import (
 )
 
 type ServiceDiscoveryDeps[TRuntime any, TCatalog any, TPathPolicy any, TPackage any] struct {
-	IsCommandAvailable    func(TRuntime, string) bool
-	ToolInstallState      func(TRuntime, TCatalog, TPathPolicy, string) (bool, string, bool, error)
+	IsCommandAvailable     func(TRuntime, string) bool
+	ToolInstallState       func(TRuntime, TCatalog, TPathPolicy, string) (bool, string, bool, error)
 	ResolvedBrewBinaryPath func(TRuntime, string, string) (string, error)
-	IsManagedByHomebrew   func(TPathPolicy, string) bool
-	ToolDisplayName       func(TCatalog, string) string
-	IsInstallableTool     func(TCatalog, string) bool
+	IsManagedByHomebrew    func(TPathPolicy, string) bool
+	ToolDisplayName        func(TCatalog, string) string
+	IsInstallableTool      func(TCatalog, string) bool
 	ResolveCommandPackages func(TCatalog, string) []TPackage
-	SupportedTools        func(TCatalog) []string
-	InstallableTools      func(TCatalog) []string
-	CommandPath           func(TRuntime, string) (string, error)
-	IsBrewInstalled       func(TRuntime) bool
+	SupportedTools         func(TCatalog) []string
+	InstallableTools       func(TCatalog) []string
+	CommandPath            func(TRuntime, string) (string, error)
+	IsBrewInstalled        func(TRuntime) bool
 	IsBrewFormulaInstalled func(TRuntime, string) (bool, error)
 }
 
 type ServiceDiscovery[TRuntime any, TCatalog any, TPathPolicy any, TPackage any] struct {
 	runtimeAdapter *infra.RuntimeAdapter[TRuntime]
 	catalogManager *infra.CatalogManager[TCatalog, TPathPolicy]
-	deps          ServiceDiscoveryDeps[TRuntime, TCatalog, TPathPolicy, TPackage]
+	deps           ServiceDiscoveryDeps[TRuntime, TCatalog, TPathPolicy, TPackage]
 }
 
 func NewServiceDiscovery[TRuntime any, TCatalog any, TPathPolicy any, TPackage any](
@@ -108,4 +108,3 @@ func (d *ServiceDiscovery[TRuntime, TCatalog, TPathPolicy, TPackage]) IsBrewInst
 func (d *ServiceDiscovery[TRuntime, TCatalog, TPathPolicy, TPackage]) IsBrewFormulaInstalled(formula string) (bool, error) {
 	return d.deps.IsBrewFormulaInstalled(d.runtimeRef(), formula)
 }
-

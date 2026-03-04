@@ -4,10 +4,10 @@ import "reflect"
 
 // CatalogManager keeps catalog and path policy references with default fallbacks.
 type CatalogManager[TCatalog any, TPathPolicy any] struct {
-	catalog            TCatalog
-	pathPolicy         TPathPolicy
-	catalogDefault     func() TCatalog
-	pathPolicyDefault  func() TPathPolicy
+	catalog           TCatalog
+	pathPolicy        TPathPolicy
+	catalogDefault    func() TCatalog
+	pathPolicyDefault func() TPathPolicy
 }
 
 // NewCatalogManager creates a catalog manager with optional fallback factories.

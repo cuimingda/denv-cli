@@ -41,8 +41,7 @@ func TestRunCommandWithOutputForwardsWriterAndPath(t *testing.T) {
 	seen := struct {
 		name string
 		out  []byte
-	}{
-	}
+	}{}
 
 	rt := Runtime{
 		CommandRunnerWithOutput: func(out io.Writer, name string, args ...string) error {

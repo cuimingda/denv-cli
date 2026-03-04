@@ -7,8 +7,8 @@ import (
 )
 
 type Runtime struct {
-	ExecutableLookup       func(string) (string, error)
-	CommandRunner          func(name string, args ...string) ([]byte, error)
+	ExecutableLookup        func(string) (string, error)
+	CommandRunner           func(name string, args ...string) ([]byte, error)
 	CommandRunnerWithOutput func(out io.Writer, name string, args ...string) error
 }
 

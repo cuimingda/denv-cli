@@ -426,11 +426,11 @@ func (t Tool) BuildUpdateToolName() string {
 // toolCatalog 聚合工具查找、查询和命令反查索引。
 type toolCatalog struct {
 	// packageLookup 按工具ID->package
-	packageLookup       map[string]Package
+	packageLookup map[string]Package
 	// commandToPackages 按命令名->package 列表
-	commandToPackages   map[string][]Package
+	commandToPackages map[string][]Package
 	// listedTools 供 list 命令展示顺序
-	listedTools         []string
+	listedTools []string
 	// installablePackages 供 install 相关命令顺序
 	installablePackages []string
 }

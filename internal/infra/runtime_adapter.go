@@ -25,4 +25,3 @@ func (a *RuntimeAdapter[T]) Runtime() T {
 	}
 	return a.runtime
 }
-

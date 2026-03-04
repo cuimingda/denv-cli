@@ -5,17 +5,17 @@ import (
 )
 
 type ServiceVersionResolverDeps[TRuntime any, TCatalog any, TPathPolicy any, TListOptions any, TToolListItem any] struct {
-	ListToolItems        func(TRuntime, TCatalog, TPathPolicy, TListOptions) ([]TToolListItem, error)
-	ToolVersion          func(TRuntime, TCatalog, string) (string, error)
-	ToolVersionWithPath  func(TRuntime, TCatalog, string, string) (string, error)
+	ListToolItems          func(TRuntime, TCatalog, TPathPolicy, TListOptions) ([]TToolListItem, error)
+	ToolVersion            func(TRuntime, TCatalog, string) (string, error)
+	ToolVersionWithPath    func(TRuntime, TCatalog, string, string) (string, error)
 	ToolVersionForOutdated func(TRuntime, TCatalog, string) (string, error)
-	ToolLatestVersion    func(TRuntime, TCatalog, string) (string, error)
+	ToolLatestVersion      func(TRuntime, TCatalog, string) (string, error)
 }
 
 type ServiceVersionResolver[TRuntime any, TCatalog any, TPathPolicy any, TListOptions any, TToolListItem any] struct {
 	runtimeAdapter *infra.RuntimeAdapter[TRuntime]
 	catalogManager *infra.CatalogManager[TCatalog, TPathPolicy]
-	deps          ServiceVersionResolverDeps[TRuntime, TCatalog, TPathPolicy, TListOptions, TToolListItem]
+	deps           ServiceVersionResolverDeps[TRuntime, TCatalog, TPathPolicy, TListOptions, TToolListItem]
 }
 
 func NewServiceVersionResolver[TRuntime any, TCatalog any, TPathPolicy any, TListOptions any, TToolListItem any](
@@ -26,7 +26,7 @@ func NewServiceVersionResolver[TRuntime any, TCatalog any, TPathPolicy any, TLis
 	return &ServiceVersionResolver[TRuntime, TCatalog, TPathPolicy, TListOptions, TToolListItem]{
 		runtimeAdapter: runtimeAdapter,
 		catalogManager: catalogManager,
-		deps:          deps,
+		deps:           deps,
 	}
 }
 
@@ -73,4 +73,3 @@ func (v *ServiceVersionResolver[TRuntime, TCatalog, TPathPolicy, TListOptions, T
 func (v *ServiceVersionResolver[TRuntime, TCatalog, TPathPolicy, TListOptions, TToolListItem]) ToolLatestVersion(name string) (string, error) {
 	return v.deps.ToolLatestVersion(v.runtimeRef(), v.catalogRef(), name)
 }
-

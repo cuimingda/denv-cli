@@ -14,7 +14,7 @@ type BuildInstallPlanOptions struct {
 
 type InstallOptions struct {
 	// Force 是否跳过存在性判断并强制执行
-	Force  bool
+	Force bool
 	// Output 安装输出写入目标
 	Output io.Writer
 }
@@ -120,9 +120,9 @@ func normalizeInstallToolDriverRegistry(registry *InstallToolDriverRegistry) *In
 
 type installPlanService struct {
 	// runtime 运行时执行环境（已规范化）
-	runtime  Runtime
+	runtime Runtime
 	// catalog 工具目录（已规范化）
-	catalog  *toolCatalog
+	catalog *toolCatalog
 	// registry 安装驱动注册表
 	registry *InstallToolDriverRegistry
 }
