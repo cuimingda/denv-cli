@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"os/exec"
+	"strings"
 	"testing"
 )
 
@@ -185,5 +186,63 @@ func TestServiceUpdateToolWithOutputRequiresInstall(t *testing.T) {
 
 	if err := svc.UpdateToolWithOutput(bytes.NewBuffer(nil), "php"); err == nil {
 		t.Fatalf("expected update to fail for uninstalled tool")
+	}
+}
+
+func TestServiceRunBrewUpdateWritesOutput(t *testing.T) {
+	svc := NewService(Runtime{
+		ExecutableLookup: func(name string) (string, error) {
+			if name == "brew" {
+				return "/opt/homebrew/bin/brew", nil
+			}
+			return "", exec.ErrNotFound
+		},
+		CommandRunnerWithOutput: func(out io.Writer, name string, args ...string) error {
+			if name != "brew" || len(args) != 1 || args[0] != "update" {
+				t.Fatalf("unexpected brew update invocation: %s %v", name, args)
+			}
+			_, _ = io.WriteString(out, "brew index refreshed\n")
+			return nil
+		},
+	})
+
+	out := bytes.NewBuffer(nil)
+	if err := svc.RunBrewUpdate(out); err != nil {
+		t.Fatalf("RunBrewUpdate failed: %v", err)
+	}
+	if !strings.Contains(out.String(), "brew index refreshed") {
+		t.Fatalf("expected brew update output, got %q", out.String())
+	}
+}
+
+func TestServiceOutdatedCheckWithOutputReturnsStructuredItem(t *testing.T) {
+	svc := NewService(Runtime{
+		ExecutableLookup: func(name string) (string, error) {
+			if name == "tree" || name == "brew" {
+				return "/usr/local/bin/" + name, nil
+			}
+			return "", exec.ErrNotFound
+		},
+		CommandRunner: func(name string, args ...string) ([]byte, error) {
+			if name == "tree" && len(args) == 1 && args[0] == "--version" {
+				return []byte("tree version 2.1.3"), nil
+			}
+			if name == "brew" && len(args) >= 3 && args[0] == "info" {
+				return []byte(`{"formulae":[{"name":"tree","versions":{"stable":"2.3.1"},"installed":[{"version":"2.1.3"}]}]}`), nil
+			}
+			return []byte(""), nil
+		},
+	})
+
+	out := bytes.NewBuffer(nil)
+	row, err := svc.OutdatedCheckWithOutput(out, "tree")
+	if err != nil {
+		t.Fatalf("OutdatedCheckWithOutput failed: %v", err)
+	}
+	if row.State != OutdatedStateOutdated {
+		t.Fatalf("expected tree to be outdated, got %s", row.State)
+	}
+	if !strings.Contains(out.String(), "resolve current version") {
+		t.Fatalf("expected progress logs, got %q", out.String())
 	}
 }

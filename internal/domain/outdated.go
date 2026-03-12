@@ -1,13 +1,17 @@
 package domain
 
 import (
+	"io"
+
 	"github.com/cuimingda/denv-cli/internal/infra"
 )
 
 type ServiceOutdatedServiceDeps[TRuntime any, TCatalog any, TPathPolicy any, TToolCheckResult any, TOutdatedItem any] struct {
-	OutdatedItems      func(TRuntime, TCatalog, TPathPolicy) ([]TOutdatedItem, error)
-	OutdatedChecks     func(TRuntime, TCatalog, TPathPolicy) ([]TToolCheckResult, error)
-	OutdatedUpdatePlan func(TRuntime, TCatalog, TPathPolicy) ([]TOutdatedItem, error)
+	OutdatedItems           func(TRuntime, TCatalog, TPathPolicy) ([]TOutdatedItem, error)
+	OutdatedChecks          func(TRuntime, TCatalog, TPathPolicy) ([]TToolCheckResult, error)
+	OutdatedCheckWithOutput func(TRuntime, TCatalog, TPathPolicy, io.Writer, string) (TToolCheckResult, error)
+	OutdatedUpdatePlan      func(TRuntime, TCatalog, TPathPolicy) ([]TOutdatedItem, error)
+	RunBrewUpdate           func(TRuntime, io.Writer) error
 }
 
 type ServiceOutdatedService[TRuntime any, TCatalog any, TPathPolicy any, TToolCheckResult any, TOutdatedItem any] struct {
@@ -60,6 +64,14 @@ func (o *ServiceOutdatedService[TRuntime, TCatalog, TPathPolicy, TToolCheckResul
 	return o.deps.OutdatedChecks(o.runtimeRef(), o.catalogRef(), o.pathPolicyRef())
 }
 
+func (o *ServiceOutdatedService[TRuntime, TCatalog, TPathPolicy, TToolCheckResult, TOutdatedItem]) OutdatedCheckWithOutput(out io.Writer, name string) (TToolCheckResult, error) {
+	return o.deps.OutdatedCheckWithOutput(o.runtimeRef(), o.catalogRef(), o.pathPolicyRef(), out, name)
+}
+
 func (o *ServiceOutdatedService[TRuntime, TCatalog, TPathPolicy, TToolCheckResult, TOutdatedItem]) OutdatedUpdatePlan() ([]TOutdatedItem, error) {
 	return o.deps.OutdatedUpdatePlan(o.runtimeRef(), o.catalogRef(), o.pathPolicyRef())
+}
+
+func (o *ServiceOutdatedService[TRuntime, TCatalog, TPathPolicy, TToolCheckResult, TOutdatedItem]) RunBrewUpdate(out io.Writer) error {
+	return o.deps.RunBrewUpdate(o.runtimeRef(), out)
 }

@@ -12,10 +12,11 @@ var (
 	executableLookup        = exec.LookPath
 	commandRunner           = func(name string, args ...string) ([]byte, error) { return exec.Command(name, args...).CombinedOutput() }
 	commandRunnerWithOutput = func(out io.Writer, name string, args ...string) error {
-		cmd := exec.Command(name, args...)
-		cmd.Stdout = out
-		cmd.Stderr = out
-		return cmd.Run()
+		output, err := commandRunner(name, args...)
+		if len(output) > 0 {
+			_, _ = out.Write(output)
+		}
+		return err
 	}
 )
 

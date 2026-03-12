@@ -1,7 +1,10 @@
 // internal/workflows.go 封装 list/outdated 两条主工作流所需的领域数据结构与计算入口。
 package denv
 
-import "fmt"
+import (
+	"fmt"
+	"io"
+)
 
 // ToolListItem 表示命令列表展示的一条工具记录，既包含元数据也包含当前环境状态。
 type ToolListItem struct {
@@ -146,59 +149,10 @@ func outdatedChecks(rt Runtime, catalog *toolCatalog, pathPolicy PathPolicy) ([]
 	rows := make([]OutdatedCheck, 0, len(supported))
 
 	for _, name := range supported {
-		lifecycle, ok := catalog.toolLifecycle(name)
-		if !ok {
-			return nil, fmt.Errorf("unsupported tool: %s", name)
-		}
-		// 默认状态先设置为未安装，后续按实际结果细分。
-		row := newOutdatedCheck(name, lifecycle.DisplayName(name), "", "", OutdatedStateNotInstalled)
-
-		installed, _, _, err := lifecycle.IsInstalled(rt, catalog, pathPolicy)
+		row, err := outdatedCheckWithOutput(rt, catalog, pathPolicy, io.Discard, name)
 		if err != nil {
 			return nil, err
 		}
-		row.Installed = installed
-
-		if !installed {
-			row.Current = "<not installed>"
-			latest, latestErr := lifecycle.ResolveLatestVersion(rt, catalog)
-			if latestErr != nil {
-				// 未安装工具仍可能失败拿不到 latest，记录状态用于调用方决策。
-				row.State = OutdatedStateInvalidLatest
-				row.CheckError = latestErr
-			} else {
-				row.State = OutdatedStateNotInstalled
-				row.Latest = latest
-			}
-
-			rows = append(rows, row)
-			continue
-		}
-
-		current, currentErr := lifecycle.ResolveOutdatedCurrentVersion(rt, catalog)
-		if currentErr != nil {
-			row.State = OutdatedStateInvalidCurrent
-			row.CheckError = currentErr
-			rows = append(rows, row)
-			continue
-		}
-
-		latest, latestErr := lifecycle.ResolveLatestVersion(rt, catalog)
-		if latestErr != nil {
-			row.State = OutdatedStateInvalidLatest
-			row.CheckError = latestErr
-			rows = append(rows, row)
-			continue
-		}
-
-		row.Current = current
-		row.Latest = latest
-		if CompareVersions(current, latest) < 0 {
-			row.State = OutdatedStateOutdated
-		} else {
-			row.State = OutdatedStateUpToDate
-		}
-
 		rows = append(rows, row)
 	}
 

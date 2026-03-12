@@ -23,6 +23,8 @@ type InstallCommandService interface {
 type OutdatedCommandService interface {
 	SupportedTools() []string
 	OutdatedChecks() ([]denv.ToolCheckResult, error)
+	OutdatedCheckWithOutput(out io.Writer, name string) (denv.ToolCheckResult, error)
+	RunBrewUpdate(out io.Writer) error
 }
 
 // UpdateCommandService 仅包含 update 命令所需能力。

@@ -171,8 +171,14 @@ func newServiceOutdatedService(rt *infra.RuntimeAdapter[Runtime], catalog *infra
 		OutdatedChecks: func(rt Runtime, catalog *toolCatalog, pathPolicy PathPolicy) ([]ToolCheckResult, error) {
 			return outdatedChecks(rt, catalog, pathPolicy)
 		},
+		OutdatedCheckWithOutput: func(rt Runtime, catalog *toolCatalog, pathPolicy PathPolicy, out io.Writer, name string) (ToolCheckResult, error) {
+			return outdatedCheckWithOutput(rt, catalog, pathPolicy, out, name)
+		},
 		OutdatedUpdatePlan: func(rt Runtime, catalog *toolCatalog, pathPolicy PathPolicy) ([]OutdatedItem, error) {
 			return outdatedUpdatePlan(rt, catalog, pathPolicy)
+		},
+		RunBrewUpdate: func(rt Runtime, out io.Writer) error {
+			return runBrewUpdate(rt, out)
 		},
 	})
 }
@@ -333,8 +339,16 @@ func (s *Service) OutdatedItems() ([]OutdatedItem, error) {
 	return s.outdatedServiceRef().OutdatedItems()
 }
 
+func (s *Service) OutdatedCheckWithOutput(out io.Writer, name string) (ToolCheckResult, error) {
+	return s.outdatedServiceRef().OutdatedCheckWithOutput(out, name)
+}
+
 func (s *Service) OutdatedUpdatePlan() ([]OutdatedItem, error) {
 	return s.outdatedServiceRef().OutdatedUpdatePlan()
+}
+
+func (s *Service) RunBrewUpdate(out io.Writer) error {
+	return s.outdatedServiceRef().RunBrewUpdate(out)
 }
 
 func (s *Service) BuildInstallOperations(force bool) ([]InstallOperation, error) {

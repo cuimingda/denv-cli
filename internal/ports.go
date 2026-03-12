@@ -76,7 +76,9 @@ type VersionResolver interface {
 type OutdatedManager interface {
 	OutdatedChecks() ([]ToolCheckResult, error)
 	OutdatedItems() ([]OutdatedItem, error)
+	OutdatedCheckWithOutput(out io.Writer, name string) (ToolCheckResult, error)
 	OutdatedUpdatePlan() ([]OutdatedItem, error)
+	RunBrewUpdate(out io.Writer) error
 }
 
 // UpdateManager 负责生成更新候选并执行更新动作。

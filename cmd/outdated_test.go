@@ -3,9 +3,15 @@ package cmd
 
 import (
 	"bytes"
+	"io"
 	"os/exec"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
+
+	"github.com/cuimingda/denv-cli/internal"
 )
 
 func TestCmpVersions(t *testing.T) {
@@ -279,5 +285,181 @@ func TestOutdatedRecognizesBrewInstalledToolWithoutPath(t *testing.T) {
 	}
 	if !strings.Contains(got, "< 8.1") {
 		t.Fatalf("expected ffmpeg current/latest comparison, got: %q", got)
+	}
+}
+
+func TestOutdatedParallelDefaultsToFourWhenFlagHasNoValue(t *testing.T) {
+	service := &stubOutdatedCommandService{
+		tools:        []string{"php", "node", "tree", "npm", "git"},
+		waitForStart: 4,
+		started:      make(chan struct{}),
+		release:      make(chan struct{}),
+	}
+
+	cmd := NewOutdatedCmdWithService(service)
+	out := &bytes.Buffer{}
+	errOut := &bytes.Buffer{}
+	cmd.SetOut(out)
+	cmd.SetErr(errOut)
+	cmd.SetArgs([]string{"--parallel"})
+
+	done := make(chan error, 1)
+	go func() {
+		done <- cmd.Execute()
+	}()
+
+	select {
+	case <-service.started:
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for four concurrent outdated checks")
+	}
+	close(service.release)
+
+	if err := <-done; err != nil {
+		t.Fatalf("outdated command failed: %v", err)
+	}
+	if got := atomic.LoadInt32(&service.maxConcurrent); got != 4 {
+		t.Fatalf("expected max concurrency 4, got %d", got)
+	}
+}
+
+func TestOutdatedParallelRejectsValuesOutsideTwoToEight(t *testing.T) {
+	service := &stubOutdatedCommandService{
+		tools: []string{"php"},
+	}
+
+	cmd := NewOutdatedCmdWithService(service)
+	cmd.SetArgs([]string{"--parallel=1"})
+
+	err := cmd.Execute()
+	if err == nil {
+		t.Fatal("expected outdated command to reject --parallel=1")
+	}
+	if !strings.Contains(err.Error(), "--parallel must be between 2 and 8") {
+		t.Fatalf("unexpected validation error: %v", err)
+	}
+}
+
+func TestOutdatedRunsBrewUpdateBeforeChecksAndStreamsLogs(t *testing.T) {
+	service := &stubOutdatedCommandService{
+		tools: []string{"tree", "npm"},
+	}
+
+	cmd := NewOutdatedCmdWithService(service)
+	out := &bytes.Buffer{}
+	errOut := &bytes.Buffer{}
+	cmd.SetOut(out)
+	cmd.SetErr(errOut)
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("outdated command failed: %v", err)
+	}
+
+	if len(service.callOrder) == 0 || service.callOrder[0] != "brew update" {
+		t.Fatalf("expected brew update to run first, got call order %v", service.callOrder)
+	}
+
+	logs := errOut.String()
+	if !strings.Contains(logs, "brew update completed") {
+		t.Fatalf("expected brew update completion log, got: %q", logs)
+	}
+	if !strings.Contains(logs, "tree - start") {
+		t.Fatalf("expected per-command progress logs, got: %q", logs)
+	}
+	if !strings.Contains(logs, "tree 1.0.0") {
+		t.Fatalf("expected final outdated result in command progress log, got: %q", logs)
+	}
+}
+
+type stubOutdatedCommandService struct {
+	tools []string
+
+	waitForStart int
+	startOnce    sync.Once
+	started      chan struct{}
+	release      chan struct{}
+
+	active        int32
+	maxConcurrent int32
+	callOrder     []string
+	mu            sync.Mutex
+}
+
+func (s *stubOutdatedCommandService) SupportedTools() []string {
+	return append([]string{}, s.tools...)
+}
+
+func (s *stubOutdatedCommandService) OutdatedChecks() ([]denv.ToolCheckResult, error) {
+	rows := make([]denv.ToolCheckResult, 0, len(s.tools))
+	for _, name := range s.tools {
+		rows = append(rows, stubOutdatedResult(name))
+	}
+	return rows, nil
+}
+
+func (s *stubOutdatedCommandService) OutdatedCheckWithOutput(out io.Writer, name string) (denv.ToolCheckResult, error) {
+	s.recordCall(name)
+	_, _ = io.WriteString(out, "resolve current version\n")
+
+	currentActive := atomic.AddInt32(&s.active, 1)
+	s.recordMax(currentActive)
+	s.maybeSignalStart(currentActive)
+	if s.release != nil {
+		<-s.release
+	}
+	atomic.AddInt32(&s.active, -1)
+
+	_, _ = io.WriteString(out, "resolve latest version\n")
+	return stubOutdatedResult(name), nil
+}
+
+func (s *stubOutdatedCommandService) RunBrewUpdate(out io.Writer) error {
+	s.recordCall("brew update")
+	_, _ = io.WriteString(out, "fetching homebrew metadata\n")
+	_, _ = io.WriteString(out, "homebrew metadata ready\n")
+	return nil
+}
+
+func (s *stubOutdatedCommandService) recordCall(name string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.callOrder = append(s.callOrder, name)
+}
+
+func (s *stubOutdatedCommandService) recordMax(current int32) {
+	for {
+		max := atomic.LoadInt32(&s.maxConcurrent)
+		if current <= max {
+			return
+		}
+		if atomic.CompareAndSwapInt32(&s.maxConcurrent, max, current) {
+			return
+		}
+	}
+}
+
+func (s *stubOutdatedCommandService) maybeSignalStart(current int32) {
+	if s.waitForStart == 0 {
+		return
+	}
+	if current < int32(s.waitForStart) {
+		return
+	}
+	if s.started == nil {
+		return
+	}
+	s.startOnce.Do(func() {
+		close(s.started)
+	})
+}
+
+func stubOutdatedResult(name string) denv.ToolCheckResult {
+	return denv.ToolCheckResult{
+		Name:        name,
+		DisplayName: name,
+		Current:     "1.0.0",
+		Latest:      "1.0.0",
+		State:       denv.OutdatedStateUpToDate,
+		Installed:   true,
 	}
 }
